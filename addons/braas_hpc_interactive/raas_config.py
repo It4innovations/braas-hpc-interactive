@@ -126,92 +126,92 @@ def GetDAQueueScript(ClusterId, CommandTemplateId):
     # BARBORA
     if ClusterId == 1:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 36,'~/braas-hpc/scripts/barbora-slurm/run_interactive_cpu.sh'
+            return 36,'~/braas-hpc-interactive/scripts/barbora-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 24,'~/braas-hpc/scripts/barbora-slurm/run_interactive_gpu.sh'
+            return 24,'~/braas-hpc-interactive/scripts/barbora-slurm/run_interactive_gpu.sh'
 
     # KAROLINA
     elif ClusterId == 2:     
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 128,'~/braas-hpc/scripts/karolina-slurm/run_interactive_cpu.sh'
+            return 128,'~/braas-hpc-interactive/scripts/karolina-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 128,'~/braas-hpc/scripts/karolina-slurm/run_interactive_gpu.sh'
+            return 128,'~/braas-hpc-interactive/scripts/karolina-slurm/run_interactive_gpu.sh'
 
                                
     # LUMI
     elif ClusterId == 3:     
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 128,'~/braas-hpc/scripts/lumi-slurm/run_interactive_cpu.sh'
+            return 128,'~/braas-hpc-interactive/scripts/lumi-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 128,'~/braas-hpc/scripts/lumi-slurm/run_interactive_gpu.sh'
+            return 128,'~/braas-hpc-interactive/scripts/lumi-slurm/run_interactive_gpu.sh'
 
 
     # LEONARDO
     elif ClusterId == 4:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 32,'~/braas-hpc/scripts/leonardo-slurm/run_interactive_cpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/leonardo-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 32,'~/braas-hpc/scripts/leonardo-slurm/run_interactive_gpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/leonardo-slurm/run_interactive_gpu.sh'
         
     # "MARENOSTRUM5GPP": "MareNostrum 5 GPP",
     elif ClusterId == 5:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 32,'~/braas-hpc/scripts/marenostrum5gpp-slurm/run_interactive_cpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 32,'~/braas-hpc/scripts/marenostrum5gpp-slurm/run_interactive_gpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/run_interactive_gpu.sh'
 
     # "MARENOSTRUM5ACC": "MareNostrum 5 ACC",
     elif ClusterId == 6:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 32,'~/braas-hpc/scripts/marenostrum5acc-slurm/run_interactive_cpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 32,'~/braas-hpc/scripts/marenostrum5acc-slurm/run_interactive_gpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/run_interactive_gpu.sh'
 
     # "POLARIS": "Polaris",
     elif ClusterId == 7:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 64,'~/braas-hpc/scripts/polaris-pbs/run_interactive_cpu.sh'
+            return 64,'~/braas-hpc-interactive/scripts/polaris-pbs/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 64,'~/braas-hpc/scripts/polaris-pbs/run_interactive_gpu.sh'
+            return 64,'~/braas-hpc-interactive/scripts/polaris-pbs/run_interactive_gpu.sh'
 
     # "AURORA": "Aurora",
     elif ClusterId == 8:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 32,'~/braas-hpc/scripts/aurora-pbs/run_interactive_cpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/aurora-pbs/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 32,'~/braas-hpc/scripts/aurora-pbs/run_interactive_gpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/aurora-pbs/run_interactive_gpu.sh'
 
     # "VISTA": "Vista",
     elif ClusterId == 9:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 72,'~/braas-hpc/scripts/vista-slurm/run_interactive_cpu.sh'
+            return 72,'~/braas-hpc-interactive/scripts/vista-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 72,'~/braas-hpc/scripts/vista-slurm/run_interactive_gpu.sh' 
+            return 72,'~/braas-hpc-interactive/scripts/vista-slurm/run_interactive_gpu.sh' 
         
     # "FRONTERA": "Frontera",
     elif ClusterId == 10:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 32,'~/braas-hpc/scripts/frontera-slurm/run_interactive_cpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/frontera-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 32,'~/braas-hpc/scripts/frontera-slurm/run_interactive_gpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/frontera-slurm/run_interactive_gpu.sh'
         
     # "CS": "CS",
     elif ClusterId == 11:
         if CommandTemplateId == 10 * ClusterId + 8:
-            return 32,'~/braas-hpc/scripts/cs-slurm/run_interactive_cpu.sh'
+            return 32,'~/braas-hpc-interactive/scripts/cs-slurm/run_interactive_cpu.sh'
         
         elif CommandTemplateId == 10 * ClusterId + 9:
-            return 32,'~/braas-hpc/scripts/cs-slurm/run_interactive_gpu.sh'    
+            return 32,'~/braas-hpc-interactive/scripts/cs-slurm/run_interactive_gpu.sh'    
 
     return braas_hpc.raas_config.GetDAQueueScript(ClusterId, CommandTemplateId)    
 
@@ -224,62 +224,62 @@ def GetDAInteractiveScript(context):
     # BARBORA
     if cluster_type == 'BARBORA':
         if job_type == 'JOB_GPU':
-            return '~/braas-hpc/scripts/barbora-slurm/interactive/run_pynari_server_gpu.sh'
+            return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            return '~/braas-hpc/scripts/barbora-slurm/interactive/run_pynari_server_cpu.sh'    
+            return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_pynari_server_cpu.sh'    
         
     # KAROLINA
     elif cluster_type == 'KAROLINA':
         if job_type == 'JOB_GPU':
-            return '~/braas-hpc/scripts/karolina-slurm/interactive/run_pynari_server_gpu.sh'
+            return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            return '~/braas-hpc/scripts/karolina-slurm/interactive/run_pynari_server_cpu.sh'
+            return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_pynari_server_cpu.sh'
                                           
     # LUMI
     elif cluster_type == 'LUMI':     
         if job_type == 'JOB_GPU':
-            return '~/braas-hpc/scripts/lumi-slurm/interactive/run_pynari_server_gpu.sh'
+            return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            return '~/braas-hpc/scripts/lumi-slurm/interactive/run_pynari_server_cpu.sh'
+            return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_pynari_server_cpu.sh'
 
     # LEONARDO
     elif cluster_type == 'LEONARDO':
-        return '~/braas-hpc/scripts/leonardo-slurm/interactive/run_pynari_server_gpu.sh'
+        return '~/braas-hpc-interactive/scripts/leonardo-slurm/interactive/run_pynari_server_gpu.sh'
                 
     # "MARENOSTRUM5GPP": "MareNostrum 5 GPP",
     elif cluster_type == 'MARENOSTRUM5GPP':
-        return '~/braas-hpc/scripts/marenostrum5gpp-slurm/interactive/run_pynari_server_cpu.sh'
+        return '~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/interactive/run_pynari_server_cpu.sh'
 
     # "MARENOSTRUM5ACC": "MareNostrum 5 ACC",
     elif cluster_type == 'MARENOSTRUM5ACC':
-        return '~/braas-hpc/scripts/marenostrum5acc-slurm/interactive/run_pynari_server_gpu.sh'
+        return '~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/interactive/run_pynari_server_gpu.sh'
 
     # "POLARIS": "Polaris",
     elif cluster_type == 'POLARIS':
-        return '~/braas-hpc/scripts/polaris-pbs/interactive/run_pynari_server_gpu.sh'
+        return '~/braas-hpc-interactive/scripts/polaris-pbs/interactive/run_pynari_server_gpu.sh'
 
     # "AURORA": "Aurora",
     elif cluster_type == 'AURORA':
-        return '~/braas-hpc/scripts/aurora-pbs/interactive/run_pynari_server_gpu.sh'
+        return '~/braas-hpc-interactive/scripts/aurora-pbs/interactive/run_pynari_server_gpu.sh'
 
     # "VISTA": "Vista",
     elif cluster_type == 'VISTA':
-        return '~/braas-hpc/scripts/vista-slurm/interactive/run_pynari_server_gpu.sh'  
+        return '~/braas-hpc-interactive/scripts/vista-slurm/interactive/run_pynari_server_gpu.sh'  
         
     # "FRONTERA": "Frontera",
     elif cluster_type == 'FRONTERA':
-        return '~/braas-hpc/scripts/frontera-slurm/interactive/run_pynari_server_gpu.sh'
+        return '~/braas-hpc-interactive/scripts/frontera-slurm/interactive/run_pynari_server_gpu.sh'
     
     # CS
     elif cluster_type == 'CS':
         if job_type == 'JOB_GPU':
-            return '~/braas-hpc/scripts/cs-slurm/interactive/run_pynari_server_gpu.sh'
+            return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            return '~/braas-hpc/scripts/cs-slurm/interactive/run_pynari_server_cpu.sh'    
+            return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_pynari_server_cpu.sh'    
 
     else:
         return None
@@ -336,6 +336,8 @@ def GetDASupportSSHProxyJump(context):
     else:
         return False        
 
+def GetGitAddonCommand(repository, branch):    
+    return 'if [ -d ~/braas-hpc-interactive ] ; then rm -rf ~/braas-hpc-interactive ; fi ; git clone -q -b ' + branch + ' ' + repository
 
 class RaasInteractiveConfigFunctions:
     """Class that holds pointers to all functions"""
@@ -363,6 +365,7 @@ class RaasInteractiveConfigFunctions:
         self.get_da_interactive_script = GetDAInteractiveScript
         self.get_da_support_ssh_proxy_jump = GetDASupportSSHProxyJump
         self.create_job_interactive = CreateJob
+        self.get_git_addon_command_interactive = GetGitAddonCommand
     
     # Convenience methods that can be called on the instance
     # def call_get_blender_cluster_version(self):
@@ -412,6 +415,10 @@ class RaasInteractiveConfigFunctions:
     def call_get_git_addon_command(self, repository, branch):
         """Gets git addon command"""
         return self.get_git_addon_command(repository, branch)
+    
+    def call_get_git_addon_command_interactive(self, repository, branch):
+        """Gets git addon command"""
+        return self.get_git_addon_command_interactive(repository, branch)    
     
     def call_get_blender_install_command(self, preset, url_link):
         """Gets Blender install command"""

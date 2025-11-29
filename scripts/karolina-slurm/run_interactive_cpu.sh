@@ -29,6 +29,7 @@ mkdir -p ${INTERACTIVE_DIR}
 ###############################################
 hostname -s > ${INTERACTIVE_DIR}/hostname.txt
 echo "$@" > ${INTERACTIVE_DIR}/command.py
+echo "${SLURM_JOBID}" > ${INTERACTIVE_DIR}/jobid.txt
 ###############################################
 #$@
 sleep 172800

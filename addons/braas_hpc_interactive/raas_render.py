@@ -111,7 +111,7 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             # submitted_job_info_ext_new = context.scene.raas_submitted_job_info_ext_new
 
             # fileTransfer = await braas_hpc.raas_connection.start_transfer_files(context, submitted_job_info_ext_new.Id, self.token)
-            await braas_hpc.raas_connection.transfer_files_to_cluster(context, fileTransfer, str(local_storage_interactive), remote_storage_interactive, submitted_job_info_ext_new.Id, self.token)
+            await braas_hpc.raas_connection.transfer_files_to_cluster(context, fileTransfer, str(local_storage_interactive), remote_storage_interactive, item.Id, self.token)
             await braas_hpc.raas_connection.end_transfer_files(context, fileTransfer, item.Id, self.token)
 
             #prefs = raas_pref.preferences()
