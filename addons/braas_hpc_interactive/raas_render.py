@@ -400,9 +400,10 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
         #                             text='', icon='DISK_DRIVE')
         # props.path = local_storage
 
-        row = box.row()
-        row.operator(RAASINTERACTIVE_OT_submit_job.bl_idname, text='Submit Interactive Job')
-        # row.operator(RAASINTERACTIVE_OT_download_files.bl_idname, text='Download information')
+        col = box.column()
+        col.prop(context.scene, "raas_interactive_type")
+        col.operator(RAASINTERACTIVE_OT_submit_job.bl_idname, text='Submit Interactive Job')
+        # col.operator(RAASINTERACTIVE_OT_download_files.bl_idname, text='Download information')
 
         # if item.InteractiveMode:                
         # if context.scene.raas_session.ssh_tunnel_proc is None or not context.scene.raas_session.ssh_tunnel_proc.is_running():
@@ -417,6 +418,7 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
             show_raas_interactive_command = context.scene.raas_session.ssh_command_jump_proc is None or not context.scene.raas_session.ssh_command_jump_proc.is_running()
         else:
             show_raas_interactive_command = context.scene.raas_session.ssh_command_proc is None or not context.scene.raas_session.ssh_command_proc.is_running()
+
 
         if show_raas_interactive_command:
             col = box.column()
@@ -480,6 +482,13 @@ def register():
         name="Interactive Command",
         description="Selected text object from text editor"
     )
+
+    scene.raas_interactive_type = bpy.props.EnumProperty(
+        name='Interactive Type',
+        items=raas_config.interactive_type_items
+    )
+
+    #################################
 
 def unregister():
 

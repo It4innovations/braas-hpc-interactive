@@ -15,9 +15,9 @@
 
 bl_info = {
     "name" : "BRaaS-HPC-Interactive",
-    "author" : "Milan Jaros, Petr Strakos, Marta Jaros, Lubomir Riha",
+    "author" : "Milan Jaros, Petr Strakos, Lubomir Riha",
     "description" : "Rendering-as-a-service for Blender on HPC with Interactive support",
-    "blender" : (4, 0, 0),
+    "blender" : (4, 5, 0),
     "version" : (4, 5, 5),
     "location" : "Addon Preferences panel",
     "wiki_url" : "https://github.com/It4innovations/braas-hpc-interactive/",

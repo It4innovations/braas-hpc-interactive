@@ -24,6 +24,12 @@ import bpy
 import braas_hpc
 
 ##################################################################
+interactive_type_items = [
+    ("CYCLESPHI", "CyclesPhi", ""),
+    ("PYNARI", "pynari", ""),
+    ("HAYSTACK", "HayStack", ""),
+]
+##################################################################
 
 async def CreateJob(context, token):
         blender_job_info_new = context.scene.raas_blender_job_info_new
@@ -221,66 +227,149 @@ def GetDAInteractiveScript(context):
     cluster_type = blender_job_info_new.cluster_type
     job_type = blender_job_info_new.job_type
 
+    raas_interactive_type = context.scene.raas_interactive_type
+
     # BARBORA
     if cluster_type == 'BARBORA':
         if job_type == 'JOB_GPU':
-            return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_pynari_server_gpu.sh'
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_pynari_server_cpu.sh'    
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_cyclesphi_server_cpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_haystack_server_cpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_pynari_server_cpu.sh'
         
     # KAROLINA
     elif cluster_type == 'KAROLINA':
         if job_type == 'JOB_GPU':
-            return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_pynari_server_gpu.sh'
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_pynari_server_cpu.sh'
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_cyclesphi_server_cpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_haystack_server_cpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_pynari_server_cpu.sh'
                                           
     # LUMI
     elif cluster_type == 'LUMI':     
         if job_type == 'JOB_GPU':
-            return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_pynari_server_gpu.sh'
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_pynari_server_cpu.sh'
-
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_cyclesphi_server_cpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_haystack_server_cpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_pynari_server_cpu.sh'
+            
     # LEONARDO
     elif cluster_type == 'LEONARDO':
-        return '~/braas-hpc-interactive/scripts/leonardo-slurm/interactive/run_pynari_server_gpu.sh'
+        if job_type == 'JOB_GPU':
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/leonardo-slurm/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/leonardo-slurm/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/leonardo-slurm/interactive/run_pynari_server_gpu.sh'
                 
     # "MARENOSTRUM5GPP": "MareNostrum 5 GPP",
-    elif cluster_type == 'MARENOSTRUM5GPP':
-        return '~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/interactive/run_pynari_server_cpu.sh'
-
+    elif cluster_type == 'MARENOSTRUM5GPP':    
+        if job_type == 'JOB_CPU':
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/interactive/run_cyclesphi_server_cpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/interactive/run_haystack_server_cpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/interactive/run_pynari_server_cpu.sh'
+            
     # "MARENOSTRUM5ACC": "MareNostrum 5 ACC",
     elif cluster_type == 'MARENOSTRUM5ACC':
-        return '~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/interactive/run_pynari_server_gpu.sh'
-
+        if job_type == 'JOB_GPU':
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/interactive/run_pynari_server_gpu.sh'
+            
     # "POLARIS": "Polaris",
     elif cluster_type == 'POLARIS':
-        return '~/braas-hpc-interactive/scripts/polaris-pbs/interactive/run_pynari_server_gpu.sh'
+        if job_type == 'JOB_GPU':
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/polaris-pbs/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/polaris-pbs/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/polaris-pbs/interactive/run_pynari_server_gpu.sh'
 
     # "AURORA": "Aurora",
     elif cluster_type == 'AURORA':
-        return '~/braas-hpc-interactive/scripts/aurora-pbs/interactive/run_pynari_server_gpu.sh'
-
+        if job_type == 'JOB_GPU':
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/aurora-pbs/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/aurora-pbs/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/aurora-pbs/interactive/run_pynari_server_gpu.sh'
+            
     # "VISTA": "Vista",
     elif cluster_type == 'VISTA':
-        return '~/braas-hpc-interactive/scripts/vista-slurm/interactive/run_pynari_server_gpu.sh'  
+        if job_type == 'JOB_GPU':
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/vista-slurm/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/vista-slurm/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/vista-slurm/interactive/run_pynari_server_gpu.sh'        
         
     # "FRONTERA": "Frontera",
     elif cluster_type == 'FRONTERA':
-        return '~/braas-hpc-interactive/scripts/frontera-slurm/interactive/run_pynari_server_gpu.sh'
+        if job_type == 'JOB_GPU':
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/frontera-slurm/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/frontera-slurm/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/frontera-slurm/interactive/run_pynari_server_gpu.sh'
     
     # CS
     elif cluster_type == 'CS':
         if job_type == 'JOB_GPU':
-            return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_pynari_server_gpu.sh'
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_cyclesphi_server_gpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_haystack_server_gpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_pynari_server_cpu.sh'    
-
+            if raas_interactive_type == 'CYCLESPHI':
+                return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_cyclesphi_server_cpu.sh'
+            elif raas_interactive_type == 'HAYSTACK':
+                return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_haystack_server_cpu.sh'
+            elif raas_interactive_type == 'PYNARI':
+                return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_pynari_server_cpu.sh'
     else:
         return None
     
