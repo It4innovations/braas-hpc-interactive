@@ -76,7 +76,17 @@ class RAASINTERACTIVE_OT_install_scripts(Operator):
                         if len(cmd) > 0:
                             #server = raas_config.GetServerFromType(cl[0])
                             server = context.scene.raas_config_functions.call_get_server_from_type(cl[0])
-                            braas_hpc.raas_connection.ssh_command_sync(server, cmd, p)                        
+                            braas_hpc.raas_connection.ssh_command_sync(server, cmd, p)
+
+                        # Install BlenderPhi
+                        self.report({'INFO'}, "Install BlenderPhi on '%s'" % (cl[0]))
+                        cmd = context.scene.raas_config_functions.call_get_blenderphi_install_command(p, preferences().raas_interactive_blenderphi_link)
+                        if len(cmd) > 0:
+                            #server = raas_config.GetServerFromType(cl[0])
+                            server = context.scene.raas_config_functions.call_get_server_from_type(cl[0])
+                            braas_hpc.raas_connection.ssh_command_sync(server, cmd, p)
+
+                            #preferences().raas_blender_installed = True
 
                         preferences().raas_interactive_scripts_installed = True
 
@@ -111,7 +121,12 @@ class RaasInteractivePreferences(AddonPreferences):
     raas_interactive_scripts_repository_branch: StringProperty(
         name='Branch',
         default='main'
-    ) # type: ignore        
+    ) # type: ignore
+
+    raas_interactive_blenderphi_link: StringProperty(
+        name='Link',
+        default='https://ftp.nluug.nl/pub/graphics/blender/release/Blender4.5/blender-4.5.5-linux-x64.tar.xz'
+    ) # type: ignore    
 
     def draw(self, context):
         layout = self.layout
@@ -127,7 +142,13 @@ class RaasInteractivePreferences(AddonPreferences):
         rep_box = rep_box1.row(align=True)
         # rep_box.enabled = True
         rep_box.prop(self, 'raas_interactive_scripts_repository_branch', text='')
-        box = layout.box()    
+        # box = layout.box()
+
+        rep_split = box.split(**factor(0.25), align=True)
+        rep_split.label(text='Link (BlenderPhi):')
+        rep_box1 = rep_split.row(align=True)
+        rep_box = rep_box1.row(align=True)
+        rep_box.prop(self, 'raas_interactive_blenderphi_link', text='')
 
         rep_split = box.split(**factor(0.25), align=True)
         rep_split.label(text='Manual Installation / Scripts allready installed:')

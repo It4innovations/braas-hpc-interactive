@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO: Update this script
+
 module use /mnt/proj3/open-28-64/blender/salomon/projects/ingo/easybuild_cs_p06/modules/all
 
 ml Python/3.11.3-GCCcore-12.2.0

@@ -7,7 +7,8 @@ if [ ${#work_dir} -ge 1  ]; then
   mkdir -p job
   cd job
 
-  sacct --format=JobID%20,Jobname%50,state,Submit,start,end -j ${SLURM_JOBID} | grep -v "\." > ${work_dir}.job
+  # sacct --format=JobID%20,Jobname%50,state,Submit,start,end -j ${SLURM_JOBID} | grep -v "\." > ${work_dir}.job
+  qstat -fx ${PBS_JOBID} > ${work_dir}.job
 fi
 ###############################################
 ROOT_DIR=${PWD}/../
@@ -29,7 +30,8 @@ mkdir -p ${INTERACTIVE_DIR}
 ###############################################
 hostname -s > ${INTERACTIVE_DIR}/hostname.txt
 echo "$@" > ${INTERACTIVE_DIR}/command.py
-echo "${SLURM_JOBID}" > ${INTERACTIVE_DIR}/jobid.txt
+# echo "${SLURM_JOBID}" > ${INTERACTIVE_DIR}/jobid.txt
+echo "${PBS_JOBID}" > ${INTERACTIVE_DIR}/jobid.txt
 ###############################################
 #$@
 sleep 172800

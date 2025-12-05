@@ -82,6 +82,10 @@ class RAASINTERACTIVE_OT_run_interactive_command(
 
             item = context.scene.raas_list_jobs[idx]
 
+            raas_interactive_type = context.scene.raas_interactive_type
+            command_file_name = 'command.sh'
+            if raas_interactive_type == 'PYNARI':
+                command_file_name = 'command.py'                
             ##########################Download#####################################
             fileTransfer = await braas_hpc.raas_connection.start_transfer_files(context, item.Id, self.token)
                 
@@ -99,10 +103,10 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             #local_storage_interactive = str(raas_connection.get_job_local_storage_interactive(blender_job_info_new.job_name))
             text_content = context.scene.raas_interactive_command.as_string()
 
-            self.report({'INFO'}, f'Writing command \"{context.scene.raas_interactive_command.name}\" to \"{local_storage_interactive}/command.py\".')
+            self.report({'INFO'}, f'Writing command \"{context.scene.raas_interactive_command.name}\" to \"{local_storage_interactive}/{command_file_name}\".')
             
             # Write to file
-            file_path = str(local_storage_interactive / 'command.py')  # or your desired path
+            file_path = str(local_storage_interactive / command_file_name)  # or your desired path
             with open(file_path, 'w') as f:
                 f.write(text_content)
 
@@ -133,7 +137,7 @@ class RAASINTERACTIVE_OT_run_interactive_command(
                 jobid = f.read().strip()            
             
             #cmd = raas_jobs.CmdCreateJob(context)
-            #cmd = f'{raas_config.GetDAInteractiveScript(context)} {remote_storage_interactive}/command.py > {remote_storage_interactive}/command.log 2> {remote_storage_interactive}/command.err &'
+            #cmd = f'{raas_config.GetDAInteractiveScript(context)} {remote_storage_interactive}/{command_file_name} > {remote_storage_interactive}/command.log 2> {remote_storage_interactive}/command.err &'
 
             sharedBasepath = f'{braas_hpc.raas_connection.get_direct_access_remote_storage(context)}/{remote_storage_interactive}/interactive'
 
@@ -177,7 +181,7 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             
             # await ListSchedulerJobsForCurrentUser(context, self.token)
             # 
-            self.report({'INFO'}, f'Command {remote_storage_interactive}/command.py submitted to interactive session on node {node}.')
+            self.report({'INFO'}, f'Command {remote_storage_interactive}/{command_file_name} submitted to interactive session on node {node}.')
 
         except Exception as e:
             import traceback

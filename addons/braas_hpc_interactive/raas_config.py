@@ -25,9 +25,12 @@ import braas_hpc
 
 ##################################################################
 interactive_type_items = [
-    ("CYCLESPHI", "CyclesPhi", ""),
-    ("PYNARI", "pynari", ""),
-    ("HAYSTACK", "HayStack", ""),
+    ("BLENDERPHI", "BlenderPhi", ""),
+
+    # TODO: implement other interactive types
+    # ("CYCLESPHI", "CyclesPhi", ""),
+    # ("PYNARI", "pynari", ""),
+    # ("HAYSTACK", "HayStack", ""),
 ]
 ##################################################################
 
@@ -232,7 +235,9 @@ def GetDAInteractiveScript(context):
     # BARBORA
     if cluster_type == 'BARBORA':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_haystack_server_gpu.sh'
@@ -240,7 +245,9 @@ def GetDAInteractiveScript(context):
                 return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_blenderphi_server_cpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_cyclesphi_server_cpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/barbora-slurm/interactive/run_haystack_server_cpu.sh'
@@ -250,7 +257,9 @@ def GetDAInteractiveScript(context):
     # KAROLINA
     elif cluster_type == 'KAROLINA':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_haystack_server_gpu.sh'
@@ -258,7 +267,9 @@ def GetDAInteractiveScript(context):
                 return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_blenderphi_server_cpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_cyclesphi_server_cpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/karolina-slurm/interactive/run_haystack_server_cpu.sh'
@@ -268,7 +279,9 @@ def GetDAInteractiveScript(context):
     # LUMI
     elif cluster_type == 'LUMI':     
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_haystack_server_gpu.sh'
@@ -276,7 +289,9 @@ def GetDAInteractiveScript(context):
                 return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_blenderphi_server_cpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_cyclesphi_server_cpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/lumi-slurm/interactive/run_haystack_server_cpu.sh'
@@ -286,7 +301,9 @@ def GetDAInteractiveScript(context):
     # LEONARDO
     elif cluster_type == 'LEONARDO':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/leonardo-slurm/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/leonardo-slurm/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/leonardo-slurm/interactive/run_haystack_server_gpu.sh'
@@ -296,7 +313,9 @@ def GetDAInteractiveScript(context):
     # "MARENOSTRUM5GPP": "MareNostrum 5 GPP",
     elif cluster_type == 'MARENOSTRUM5GPP':    
         if job_type == 'JOB_CPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/interactive/run_blenderphi_server_cpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/interactive/run_cyclesphi_server_cpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/marenostrum5gpp-slurm/interactive/run_haystack_server_cpu.sh'
@@ -306,7 +325,9 @@ def GetDAInteractiveScript(context):
     # "MARENOSTRUM5ACC": "MareNostrum 5 ACC",
     elif cluster_type == 'MARENOSTRUM5ACC':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/marenostrum5acc-slurm/interactive/run_haystack_server_gpu.sh'
@@ -316,7 +337,9 @@ def GetDAInteractiveScript(context):
     # "POLARIS": "Polaris",
     elif cluster_type == 'POLARIS':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/polaris-pbs/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/polaris-pbs/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/polaris-pbs/interactive/run_haystack_server_gpu.sh'
@@ -326,7 +349,9 @@ def GetDAInteractiveScript(context):
     # "AURORA": "Aurora",
     elif cluster_type == 'AURORA':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/aurora-pbs/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/aurora-pbs/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/aurora-pbs/interactive/run_haystack_server_gpu.sh'
@@ -336,7 +361,9 @@ def GetDAInteractiveScript(context):
     # "VISTA": "Vista",
     elif cluster_type == 'VISTA':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/vista-slurm/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/vista-slurm/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/vista-slurm/interactive/run_haystack_server_gpu.sh'
@@ -346,7 +373,9 @@ def GetDAInteractiveScript(context):
     # "FRONTERA": "Frontera",
     elif cluster_type == 'FRONTERA':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/frontera-slurm/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/frontera-slurm/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/frontera-slurm/interactive/run_haystack_server_gpu.sh'
@@ -356,7 +385,9 @@ def GetDAInteractiveScript(context):
     # CS
     elif cluster_type == 'CS':
         if job_type == 'JOB_GPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_blenderphi_server_gpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_cyclesphi_server_gpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_haystack_server_gpu.sh'
@@ -364,7 +395,9 @@ def GetDAInteractiveScript(context):
                 return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_pynari_server_gpu.sh'
         
         elif job_type == 'JOB_CPU':
-            if raas_interactive_type == 'CYCLESPHI':
+            if raas_interactive_type == 'BLENDERPHI':
+                return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_blenderphi_server_cpu.sh'
+            elif raas_interactive_type == 'CYCLESPHI':
                 return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_cyclesphi_server_cpu.sh'
             elif raas_interactive_type == 'HAYSTACK':
                 return '~/braas-hpc-interactive/scripts/cs-slurm/interactive/run_haystack_server_cpu.sh'
@@ -428,6 +461,19 @@ def GetDASupportSSHProxyJump(context):
 def GetGitAddonCommand(repository, branch):    
     return 'if [ -d ~/braas-hpc-interactive ] ; then rm -rf ~/braas-hpc-interactive ; fi ; git clone -q -b ' + branch + ' ' + repository
 
+def GetBlenderPhiInstallCommand(preset, url_link):
+    # Split the URL by '/' and get the last part
+    filename = url_link.split('/')[-1]
+
+    # Remove the extension to get the desired string
+    extracted_string = filename.replace('.tar.xz', '')
+    #print(extracted_string)  # Output: blender-4.2.0-linux-x64
+
+    return 'if [ -d ~/blenderphi ] ; then rm -rf ~/blenderphi ; fi ; \
+        cd ~/ ; wget -O blenderphi.tar.xz -q %s ; \
+        tar -xf blenderphi.tar.xz ; mv %s ~/blenderphi ; rm blenderphi.tar.xz ; \
+            ' % (url_link, extracted_string)
+
 class RaasInteractiveConfigFunctions:
     """Class that holds pointers to all functions"""
     
@@ -455,6 +501,7 @@ class RaasInteractiveConfigFunctions:
         self.get_da_support_ssh_proxy_jump = GetDASupportSSHProxyJump
         self.create_job_interactive = CreateJob
         self.get_git_addon_command_interactive = GetGitAddonCommand
+        self.get_blenderphi_install_command = GetBlenderPhiInstallCommand
     
     # Convenience methods that can be called on the instance
     # def call_get_blender_cluster_version(self):
@@ -512,6 +559,10 @@ class RaasInteractiveConfigFunctions:
     def call_get_blender_install_command(self, preset, url_link):
         """Gets Blender install command"""
         return self.get_blender_install_command(preset, url_link)
+    
+    def call_get_blenderphi_install_command(self, preset, url_link):
+        """Gets BlenderPhi install command"""
+        return self.get_blenderphi_install_command(preset, url_link)
     
     def call_get_blender_patch_command(self, preset, url_link):
         """Gets Blender patch command"""
