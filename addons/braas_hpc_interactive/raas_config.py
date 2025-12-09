@@ -236,7 +236,18 @@ def GetDAInteractiveScript(context):
     item = context.scene.raas_list_jobs[idx]
 
     cluster_type = item.ClusterName
-    job_type = item.JobType
+    job_type = 'JOB_CPU'
+
+    # Try to read blender_job_info_json
+    try:
+        import json
+        blender_job_info = json.loads(item.blender_job_info_json)
+
+        cluster_type = blender_job_info['cluster_type']
+        job_type = blender_job_info['job_type']
+        
+    except:
+        pass
 
     raas_interactive_type = context.scene.raas_interactive_type
 
