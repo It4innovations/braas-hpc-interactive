@@ -78,13 +78,14 @@ class RAASINTERACTIVE_OT_install_scripts(Operator):
                             server = context.scene.raas_config_functions.call_get_server_from_type(cl[0])
                             braas_hpc.raas_connection.ssh_command_sync(server, cmd, p)
 
-                        # Install BlenderPhi
-                        self.report({'INFO'}, "Install BlenderPhi on '%s'" % (cl[0]))
-                        cmd = context.scene.raas_config_functions.call_get_blenderphi_install_command(p, preferences().raas_interactive_blenderphi_link)
-                        if len(cmd) > 0:
-                            #server = raas_config.GetServerFromType(cl[0])
-                            server = context.scene.raas_config_functions.call_get_server_from_type(cl[0])
-                            braas_hpc.raas_connection.ssh_command_sync(server, cmd, p)
+                        if len(preferences().raas_interactive_blenderphi_link) > 0:
+                            # Install BlenderPhi
+                            self.report({'INFO'}, "Install BlenderPhi on '%s'" % (cl[0]))
+                            cmd = context.scene.raas_config_functions.call_get_blenderphi_install_command(p, preferences().raas_interactive_blenderphi_link)
+                            if len(cmd) > 0:
+                                #server = raas_config.GetServerFromType(cl[0])
+                                server = context.scene.raas_config_functions.call_get_server_from_type(cl[0])
+                                braas_hpc.raas_connection.ssh_command_sync(server, cmd, p)
 
                             #preferences().raas_blender_installed = True
 

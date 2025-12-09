@@ -28,9 +28,9 @@ interactive_type_items = [
     ("BLENDERPHI", "BlenderPhi", ""),
 
     # TODO: implement other interactive types
-    # ("CYCLESPHI", "CyclesPhi", ""),
-    # ("PYNARI", "pynari", ""),
-    # ("HAYSTACK", "HayStack", ""),
+    ("CYCLESPHI", "CyclesPhi", ""),
+    ("PYNARI", "pynari", ""),
+    ("HAYSTACK", "HayStack", ""),
 ]
 ##################################################################
 
@@ -226,9 +226,17 @@ def GetDAQueueScript(ClusterId, CommandTemplateId):
 
 def GetDAInteractiveScript(context):
 
-    blender_job_info_new = context.scene.raas_blender_job_info_new
-    cluster_type = blender_job_info_new.cluster_type
-    job_type = blender_job_info_new.job_type
+    # blender_job_info_new = context.scene.raas_blender_job_info_new
+    # item = context.scene.raas_list_jobs[context.scene.raas_list_jobs_index]
+    idx = context.scene.raas_list_jobs_index
+
+    if idx == -1:
+        raise Exception('No job selected.')
+
+    item = context.scene.raas_list_jobs[idx]
+
+    cluster_type = item.ClusterName
+    job_type = item.JobType
 
     raas_interactive_type = context.scene.raas_interactive_type
 
@@ -406,57 +414,57 @@ def GetDAInteractiveScript(context):
     else:
         return None
     
-def GetDASupportSSHProxyJump(context):
+# def GetDASupportSSHProxyJump(context):
 
-    blender_job_info_new = context.scene.raas_blender_job_info_new
-    cluster_type = blender_job_info_new.cluster_type
-    job_type = blender_job_info_new.job_type
+#     blender_job_info_new = context.scene.raas_blender_job_info_new
+#     cluster_type = blender_job_info_new.cluster_type
+#     job_type = blender_job_info_new.job_type
 
-    # BARBORA
-    if cluster_type == 'BARBORA':
-        return True   
+#     # BARBORA
+#     if cluster_type == 'BARBORA':
+#         return False   
         
-    # KAROLINA
-    elif cluster_type == 'KAROLINA':
-        return True
+#     # KAROLINA
+#     elif cluster_type == 'KAROLINA':
+#         return False
                                           
-    # LUMI
-    elif cluster_type == 'LUMI':     
-        return True
+#     # LUMI
+#     elif cluster_type == 'LUMI':     
+#         return False
 
-    # LEONARDO
-    elif cluster_type == 'LEONARDO':
-        return False
+#     # LEONARDO
+#     elif cluster_type == 'LEONARDO':
+#         return False
                 
-    # "MARENOSTRUM5GPP": "MareNostrum 5 GPP",
-    elif cluster_type == 'MARENOSTRUM5GPP':
-        return False
+#     # "MARENOSTRUM5GPP": "MareNostrum 5 GPP",
+#     elif cluster_type == 'MARENOSTRUM5GPP':
+#         return False
     
-    # "MARENOSTRUM5ACC": "MareNostrum 5 ACC",
-    elif cluster_type == 'MARENOSTRUM5ACC':
-        return False
+#     # "MARENOSTRUM5ACC": "MareNostrum 5 ACC",
+#     elif cluster_type == 'MARENOSTRUM5ACC':
+#         return False
 
-    # "POLARIS": "Polaris",
-    elif cluster_type == 'POLARIS':
-        return False
+#     # "POLARIS": "Polaris",
+#     elif cluster_type == 'POLARIS':
+#         return False
 
-    # "AURORA": "Aurora",
-    elif cluster_type == 'AURORA':
-        return False
+#     # "AURORA": "Aurora",
+#     elif cluster_type == 'AURORA':
+#         return False
     
-    # "VISTA": "Vista",
-    elif cluster_type == 'VISTA':
-        return False  
+#     # "VISTA": "Vista",
+#     elif cluster_type == 'VISTA':
+#         return False  
         
-    # "FRONTERA": "Frontera",
-    elif cluster_type == 'FRONTERA':
-        return False
+#     # "FRONTERA": "Frontera",
+#     elif cluster_type == 'FRONTERA':
+#         return False
     
-    elif cluster_type == 'CS':
-        return True    
+#     elif cluster_type == 'CS':
+#         return True    
 
-    else:
-        return False        
+#     else:
+#         return False        
 
 def GetGitAddonCommand(repository, branch):    
     return 'if [ -d ~/braas-hpc-interactive ] ; then rm -rf ~/braas-hpc-interactive ; fi ; git clone -q -b ' + branch + ' ' + repository
@@ -490,6 +498,7 @@ class RaasInteractiveConfigFunctions:
         self.get_da_open_call_project = braas_hpc.raas_config.GetDAOpenCallProject
         self.get_da_queue_mpi_procs = braas_hpc.raas_config.GetDAQueueMPIProcs
         self.get_da_queue_script = GetDAQueueScript
+        self.get_special_job_flags = braas_hpc.raas_config.GetDAJobSpecialFlags
         self.get_git_addon_command = braas_hpc.raas_config.GetGitAddonCommand
         self.get_blender_install_command = braas_hpc.raas_config.GetBlenderInstallCommand
         self.get_blender_patch_command = braas_hpc.raas_config.GetBlenderPatchCommand
@@ -498,7 +507,7 @@ class RaasInteractiveConfigFunctions:
 
         ########################New
         self.get_da_interactive_script = GetDAInteractiveScript
-        self.get_da_support_ssh_proxy_jump = GetDASupportSSHProxyJump
+        # self.get_da_support_ssh_proxy_jump = GetDASupportSSHProxyJump
         self.create_job_interactive = CreateJob
         self.get_git_addon_command_interactive = GetGitAddonCommand
         self.get_blenderphi_install_command = GetBlenderPhiInstallCommand
@@ -548,6 +557,10 @@ class RaasInteractiveConfigFunctions:
         """Gets DA queue script"""
         return self.get_da_queue_script(cluster_id, command_template_id)
     
+    def call_get_special_job_flags(self, context, cluster_id, command_template_id, pid_queue):
+        """Gets special job flags"""
+        return self.get_special_job_flags(context, cluster_id, command_template_id, pid_queue)    
+    
     def call_get_git_addon_command(self, repository, branch):
         """Gets git addon command"""
         return self.get_git_addon_command(repository, branch)
@@ -580,6 +593,6 @@ class RaasInteractiveConfigFunctions:
         """Gets DA interactive script"""
         return self.get_da_interactive_script(context)
     
-    def call_get_da_support_ssh_proxy_jump(self, context):
-        """Gets DA support SSH proxy jump"""
-        return self.get_da_support_ssh_proxy_jump(context)
+    # def call_get_da_support_ssh_proxy_jump(self, context):
+    #     """Gets DA support SSH proxy jump"""
+    #     return self.get_da_support_ssh_proxy_jump(context)
