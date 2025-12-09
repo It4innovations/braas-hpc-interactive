@@ -18,9 +18,9 @@ mkdir -p ${OUT_DIR}
 mkdir -p ${CACHE_DIR}
 
 ###############################################
-ml CUDA
-ml Mesa
-ml GCC
+# ml CUDA
+# ml Mesa
+# ml GCC
 ###############################################
 BLEND_FILE=`cat ${ROOT_DIR}/interactive/blendfile`
 FRAME_CMD="--render-frame 1"
