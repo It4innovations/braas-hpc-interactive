@@ -39,6 +39,7 @@ from bpy.types import Header, Menu
 from . import raas_pref
 from . import raas_config
 from . import raas_connection
+from . import raas_jobs
 
 import braas_hpc
 
@@ -83,70 +84,54 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             item = context.scene.raas_list_jobs[idx]
 
             raas_interactive_type = context.scene.raas_interactive_type
-            command_file_name = 'command.sh'
-            if raas_interactive_type == 'PYNARI':
-                command_file_name = 'command.py'                
+
             ##########################Download#####################################
             fileTransfer = await braas_hpc.raas_connection.start_transfer_files(context, item.Id, self.token)
                 
             remote_storage_interactive = braas_hpc.raas_connection.convert_path_to_linux(item.Name) + '/interactive'
             local_storage_interactive = braas_hpc.raas_connection.get_job_local_storage(item.Name)
 
-            await braas_hpc.raas_connection.transfer_files_from_cluster(context, fileTransfer, remote_storage_interactive, str(local_storage_interactive), item.Id, self.token)
-
-            # await braas_hpc.raas_connection.end_transfer_files(context, fileTransfer, item.Id, self.token)
+            await braas_hpc.raas_connection.transfer_files_from_cluster(context, fileTransfer, remote_storage_interactive, str(local_storage_interactive), item.Id, self.token)            
             ###############################################################
 
-            remote_storage_interactive = str(braas_hpc.raas_connection.convert_path_to_linux(item.Name))
-            local_storage_interactive = braas_hpc.raas_connection.get_job_local_storage(item.Name) / 'interactive'
+            # command_file_name = 'command.sh'
+            if raas_interactive_type == 'PYNARI':
+                command_file_name = 'command.py'                
 
-            #local_storage_interactive = str(raas_connection.get_job_local_storage_interactive(blender_job_info_new.job_name))
-            text_content = context.scene.raas_interactive_command.as_string()
+                remote_storage_interactive = str(braas_hpc.raas_connection.convert_path_to_linux(item.Name))
+                local_storage_interactive = braas_hpc.raas_connection.get_job_local_storage(item.Name) / 'interactive'
 
-            self.report({'INFO'}, f'Writing command \"{context.scene.raas_interactive_command.name}\" to \"{local_storage_interactive}/{command_file_name}\".')
-            
-            # Write to file
-            file_path = str(local_storage_interactive / command_file_name)  # or your desired path
-            with open(file_path, 'w') as f:
-                f.write(text_content)
+                #local_storage_interactive = str(raas_connection.get_job_local_storage_interactive(blender_job_info_new.job_name))
+                text_content = context.scene.raas_interactive_command.as_string()
 
-            #remote_storage_interactive = raas_connection.convert_path_to_linux(raas_connection.get_job_remote_storage_interactive(blender_job_info_new.job_name))
+                self.report({'INFO'}, f'Writing command \"{context.scene.raas_interactive_command.name}\" to \"{local_storage_interactive}/{command_file_name}\".')
+                
+                # Write to file
+                file_path = str(local_storage_interactive / command_file_name)  # or your desired path
+                with open(file_path, 'w') as f:
+                    f.write(text_content)
 
-            # submitted_job_info_ext_new = context.scene.raas_submitted_job_info_ext_new
+                #remote_storage_interactive = raas_connection.convert_path_to_linux(raas_connection.get_job_remote_storage_interactive(blender_job_info_new.job_name))
 
-            # fileTransfer = await braas_hpc.raas_connection.start_transfer_files(context, submitted_job_info_ext_new.Id, self.token)
-            await braas_hpc.raas_connection.transfer_files_to_cluster(context, fileTransfer, str(local_storage_interactive), remote_storage_interactive, item.Id, self.token)
-            await braas_hpc.raas_connection.end_transfer_files(context, fileTransfer, item.Id, self.token)
+                # submitted_job_info_ext_new = context.scene.raas_submitted_job_info_ext_new
+
+                # fileTransfer = await braas_hpc.raas_connection.start_transfer_files(context, submitted_job_info_ext_new.Id, self.token)
+                await braas_hpc.raas_connection.transfer_files_to_cluster(context, fileTransfer, str(local_storage_interactive), remote_storage_interactive, item.Id, self.token)
+                await braas_hpc.raas_connection.end_transfer_files(context, fileTransfer, item.Id, self.token)
+
+            else:
+                await braas_hpc.raas_connection.end_transfer_files(context, fileTransfer, item.Id, self.token)
 
             #prefs = raas_pref.preferences()
             preset = prefs.cluster_presets[context.scene.raas_cluster_presets_index]
            
             # serverHostname = raas_config.GetDAServer(context)
-            serverHostname = context.scene.raas_config_functions.call_get_da_server(context)
-
-            #node = context.scene.raas_session.ssh_tunnel_proc.remote_host
-            # local_storage_interactive = raas_connection.get_job_local_storage(item.Name) / 'interactive' / 'hostname.txt'
-            # Read hostname from file
-            hostname_file = local_storage_interactive / 'hostname.txt'
-            with open(hostname_file, 'r') as f:
-                hostname = f.read().strip()
-            node = hostname.split('.')[0]  # Get just the node name
-
-            jobid_file = local_storage_interactive / 'jobid.txt'
-            with open(jobid_file, 'r') as f:
-                jobid = f.read().strip()            
+            serverHostname = context.scene.raas_config_functions.call_get_da_server(context)       
             
             #cmd = raas_jobs.CmdCreateJob(context)
             #cmd = f'{raas_config.GetDAInteractiveScript(context)} {remote_storage_interactive}/{command_file_name} > {remote_storage_interactive}/command.log 2> {remote_storage_interactive}/command.err &'
 
-            sharedBasepath = f'{braas_hpc.raas_connection.get_direct_access_remote_storage(context)}/{remote_storage_interactive}/interactive'
-
-            da_interactive_script = context.scene.raas_config_functions.call_get_da_interactive_script(context)
-            # if raas_config.GetDASupportSSHProxyJump(context):
-            if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-                cmd = f"cd {sharedBasepath}; {da_interactive_script}"
-            else:
-                cmd = f"cd {sharedBasepath}; srun -u -n 1 --jobid={jobid} {da_interactive_script}"
+            cmd, node, jobid, server_port = raas_jobs.CmdCreateJob(context)
 
             #await raas_connection.ssh_command_jump(server, node, cmd, preset)
             # prefs = raas_pref.preferences()
@@ -159,20 +144,20 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             destination = serverHostname #f"{username}@{serverHostname}"
 
             #create_ssh_command_jump(self, key_file, jump_host, destination, command)
-            local_port = 7000
-            remote_port = local_port
+            local_port = server_port
+            remote_port = server_port
 
-            if hasattr(context.scene, "braas_hpc_renderengine"):
-                server_settings = context.scene.braas_hpc_renderengine.server_settings
-                local_port = server_settings.braas_hpc_renderengine_port                
-                remote_port = server_settings.braas_hpc_renderengine_port
+            # if hasattr(context.scene, "braas_hpc_renderengine"):
+            #     server_settings = context.scene.braas_hpc_renderengine.server_settings
+            #     local_port = server_settings.braas_hpc_renderengine_port                
+            #     remote_port = server_settings.braas_hpc_renderengine_port
 
             #TODO: MJ !!!
             # if raas_config.GetDASupportSSHProxyJump(context):
-            if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-                context.scene.raas_session.create_ssh_command_jump(key_file, destination, node, local_port, remote_port, cmd)
-            else:
-                context.scene.raas_session.create_ssh_command(key_file, destination, local_port, node, remote_port, cmd)
+            # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
+            #     context.scene.raas_session.create_ssh_command_jump(key_file, destination, node, local_port, remote_port, cmd)
+            # else:
+            context.scene.raas_session.create_ssh_command(key_file, destination, local_port, node, remote_port, cmd)
 
             # item = context.scene.raas_submitted_job_info_ext_new
             # asyncio.gather(ListSchedulerJobsForCurrentUser(context, self.token))
@@ -181,7 +166,7 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             
             # await ListSchedulerJobsForCurrentUser(context, self.token)
             # 
-            self.report({'INFO'}, f'Command {remote_storage_interactive}/{command_file_name} submitted to interactive session on node {node}.')
+            self.report({'INFO'}, f'Command submitted to interactive session on node {node}.')
 
         except Exception as e:
             import traceback
@@ -213,10 +198,10 @@ class RAASINTERACTIVE_OT_stop_interactive_command(
         try:
             #TODO: MJ !!!
             # if raas_config.GetDASupportSSHProxyJump(context):
-            if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-                context.scene.raas_session.close_ssh_command_jump() 
-            else:
-                context.scene.raas_session.close_ssh_command()
+            # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
+            #     context.scene.raas_session.close_ssh_command_jump() 
+            # else:
+            context.scene.raas_session.close_ssh_command()
 
         except Exception as e:
             #print('Problem with downloading files:')
@@ -254,6 +239,7 @@ class RAASINTERACTIVE_OT_submit_job(
                 return         
 
             #scene = context.scene
+            raas_interactive_type = context.scene.raas_interactive_type
             prefs = braas_hpc.raas_pref.preferences()
 
             if prefs.cluster_presets[context.scene.raas_cluster_presets_index].is_enabled == False:
@@ -289,7 +275,43 @@ class RAASINTERACTIVE_OT_submit_job(
             outdir = Path(prefs.raas_job_storage_path) / unique_dir / 'in'
             outdir.mkdir(parents=True)
 
-            missing_sources = None
+            # missing_sources = None
+
+            engine_old = context.scene.render.engine
+            context.scene.render.engine = 'CYCLES'
+            
+            # Prepare blend file
+            if raas_interactive_type == 'BLENDERPHI':
+                if context.scene.raas_blender_job_info_new.file_type == 'DEFAULT':
+                    # Save to a different file, specifically for Raas.
+                    context.window_manager.raas_status = 'SAVING'
+                    filepath = await braas_hpc.raas_render.submit_job_save_blendfile(context, outdir)
+                    context.scene.raas_blender_job_info_new.blendfile = filepath.name
+
+                else: #OTHER
+                    filepath = Path(raas_connection.get_blendfile_fullpath(context)).with_suffix('.blend')        
+
+                if context.scene.raas_blender_job_info_new.file_type == 'DEFAULT':
+                    # BAT-pack the files to the destination directory.
+                    missing_sources = await braas_hpc.raas_render.submit_job_bat_pack(filepath, context.scene.raas_blender_job_info_new.job_project, outdir)
+
+                    # remove files
+                    self.log.info("Removing temporary file %s", filepath)
+                    filepath.unlink()                
+                else:                  
+
+                    from distutils.dir_util import copy_tree
+                    copy_tree(bpy.path.abspath(context.scene.raas_blender_job_info_new.blendfile_dir), str(outdir))
+
+                outdir_interactive = Path(prefs.raas_job_storage_path) / unique_dir / 'interactive'
+                outdir_interactive.mkdir(parents=True)
+
+                # Write to file
+                file_path_interactive = str(outdir_interactive / 'blendfile')  # or your desired path
+                with open(file_path_interactive, 'w') as f:
+                    f.write(f'in/{filepath.name}') # TODO: context.scene.raas_blender_job_info_new.file_type != 'DEFAULT'
+
+            context.scene.render.engine = engine_old
 
             # Image/animation info
             #context.scene.raas_blender_job_info_new.frame_step = context.scene.frame_step
@@ -300,11 +322,11 @@ class RAASINTERACTIVE_OT_submit_job(
             context.scene.raas_blender_job_info_new.job_name = unique_dir  
 
             # Do a final report.
-            if missing_sources:
-                names = (ms.name for ms in missing_sources)
-                self.report({'WARNING'}, 'Raas job created with missing files: %s' %
-                            '; '.join(names
-                            ))
+            # if missing_sources:
+            #     names = (ms.name for ms in missing_sources)
+            #     self.report({'WARNING'}, 'Raas job created with missing files: %s' %
+            #                 '; '.join(names
+            #                 ))
 
             # await raas_config.CreateJob(context, self.token)  
             await context.scene.raas_config_functions.call_create_job_interactive(context, self.token)
@@ -418,15 +440,18 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
         #     row.operator(RAAS_OT_disconnect_from_client.bl_idname, text='Disconnect from Client')
 
         # if raas_config.GetDASupportSSHProxyJump(context):
-        if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-            show_raas_interactive_command = context.scene.raas_session.ssh_command_jump_proc is None or not context.scene.raas_session.ssh_command_jump_proc.is_running()
-        else:
-            show_raas_interactive_command = context.scene.raas_session.ssh_command_proc is None or not context.scene.raas_session.ssh_command_proc.is_running()
+        # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
+        #     show_raas_interactive_command = context.scene.raas_session.ssh_command_jump_proc is None or not context.scene.raas_session.ssh_command_jump_proc.is_running()
+        # else:
+        show_raas_interactive_command = context.scene.raas_session.ssh_command_proc is None or not context.scene.raas_session.ssh_command_proc.is_running()
 
 
         if show_raas_interactive_command:
             col = box.column()
-            col.prop(context.scene, "raas_interactive_command")
+            
+            if context.scene.raas_interactive_type == 'PYNARI':
+                col.prop(context.scene, "raas_interactive_command")
+
             col.operator(RAASINTERACTIVE_OT_run_interactive_command.bl_idname, text='Run Interactive Command')
         else:
             row = box.row()
