@@ -28,9 +28,9 @@ interactive_type_items = [
     ("BLENDERPHI", "BlenderPhi", ""),
 
     # TODO: implement other interactive types
-    ("CYCLESPHI", "CyclesPhi", ""),
-    ("PYNARI", "pynari", ""),
-    ("HAYSTACK", "HayStack", ""),
+    # ("CYCLESPHI", "CyclesPhi", ""),
+    # ("PYNARI", "pynari", ""),
+    # ("HAYSTACK", "HayStack", ""),
 ]
 ##################################################################
 
@@ -245,7 +245,7 @@ def GetDAInteractiveScript(context):
 
         cluster_type = blender_job_info['cluster_type']
         job_type = blender_job_info['job_type']
-        
+
     except:
         pass
 
