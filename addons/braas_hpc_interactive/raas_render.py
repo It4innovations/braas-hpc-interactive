@@ -362,7 +362,7 @@ class RAASINTERACTIVE_OT_submit_job(
         self.quit()
 
 class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel):
-    bl_label = "Interactive"
+    bl_label = "BRaaS-HPC Interactive"
     bl_parent_id = "RAAS_PT_simplify"
 
     def draw(self, context):
