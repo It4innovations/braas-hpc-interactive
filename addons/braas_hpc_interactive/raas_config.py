@@ -485,13 +485,13 @@ def GetBlenderPhiInstallCommand(preset, url_link):
     filename = url_link.split('/')[-1]
 
     # Remove the extension to get the desired string
-    extracted_string = filename.replace('.tar.xz', '')
+    # extracted_string = filename.replace('.tar.xz', '')
     #print(extracted_string)  # Output: blender-4.2.0-linux-x64
 
     return 'if [ -d ~/blenderphi ] ; then rm -rf ~/blenderphi ; fi ; \
         cd ~/ ; wget -O blenderphi.tar.xz -q %s ; \
-        tar -xf blenderphi.tar.xz ; mv %s ~/blenderphi ; rm blenderphi.tar.xz ; \
-            ' % (url_link, extracted_string)
+        tar -xf blenderphi.tar.xz ; rm blenderphi.tar.xz ; \
+            ' % (url_link)
 
 class RaasInteractiveConfigFunctions:
     """Class that holds pointers to all functions"""
