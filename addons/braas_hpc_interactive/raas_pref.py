@@ -126,7 +126,7 @@ class RaasInteractivePreferences(AddonPreferences):
 
     raas_interactive_blenderphi_link: StringProperty(
         name='Link',
-        default='https://ftp.nluug.nl/pub/graphics/blender/release/Blender4.5/blender-4.5.5-linux-x64.tar.xz'
+        default='https://code.it4i.cz/raas/blenderphi/-/raw/main/releases/blenderphi-v4.5.5/blenderphi-v4.5.5-karolina-linux-x64-gcc13.tar.xz'
     ) # type: ignore    
 
     def draw(self, context):
