@@ -42,7 +42,9 @@ This add-on currently supports one HPC system (more systems will be added):
 - **Python**: 3.x (bundled with Blender)
 - **SSH Client**: OpenSSH or compatible SSH client
 - **Dependencies**: 
-  - [BRaaS-HPC](https://github.com/It4innovations/braas-hpc) (first, install the `braas_hpc` addon)
+  - [BRaaS-HPC Addon](https://github.com/It4innovations/braas-hpc)
+  - [BRaaS-HPC-RenderEngine](https://github.com/It4innovations/braas-hpc-renderengine)
+  - [BRaaS-HPC-RenderEngine Addon](https://github.com/It4innovations/braas-hpc-renderengine-addon)
 
 ### HPC Cluster Requirements
 - SSH access with key-based authentication
@@ -55,16 +57,14 @@ This add-on currently supports one HPC system (more systems will be added):
 
 ### Step 1: Download the Addon
 
-1. Download the add-on in zip format: https://github.com/It4innovations/braas-hpc/releases
-   - more information at https://github.com/It4innovations/braas-hpc/blob/main/README.md
-2. Download the add-on in zip format: https://github.com/It4innovations/braas-hpc-interactive/releases
+Download the add-on in zip format: https://github.com/It4innovations/braas-hpc-interactive/releases
 
 ### Step 2: Install in Blender
 1. Open Blender (version 4.5.0 or higher)
 2. Go to `Edit > Preferences > Add-ons`
 3. Click `Install...` button
 4. Navigate to the `braas_hpc_interactive.zip` file and install it
-5. Enable the add-on by checking the checkbox next to "System: BRaaS-HPC-Interactive".
+5. Enable the add-ons by checking the checkboxes next to "BRaaS-HPC", "BRaaS-HPC-Interactive" and "BRaaS-HPC-RenderEngine".
 
 ### Step 3: Install Scripts on HPC Cluster
 1. In Blender, go to `Edit > Preferences > Add-ons`
