@@ -73,7 +73,7 @@ Download the add-on in zip format: https://github.com/It4innovations/braas-hpc-i
 4. Configure the following:
    - **Git Repository (Scripts)**: Default is `https://github.com/It4innovations/braas-hpc-interactive.git`
    - **Branch**: Default is `main`
-   - **Link (BlenderPhi)**: URL to BlenderPhi download for HPC (e.g., `https://github.com/it4innovations/blenderphi/releases`)
+   - **Link (BlenderPhi)**: URL to BlenderPhi download for HPC (e.g., `https://code.it4i.cz/raas/blenderphi/-/blob/main/releases/blenderphi-v4.5.5/blenderphi-v4.5.5-karolina-linux-x64-gcc13.tar.xz`)
 5. Click `Install scripts on the cluster(s)` button
 6. Wait for confirmation that scripts are installed
 
