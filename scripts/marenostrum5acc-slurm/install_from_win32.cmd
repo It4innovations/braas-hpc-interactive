@@ -18,7 +18,7 @@ REM ######################################################################
 
 REM Download BlenderPhi 4.5.5 for Linux
 echo Downloading BlenderPhi 4.5.5 for Linux...
-powershell -Command "Invoke-WebRequest -Uri 'https://code.it4i.cz/raas/blenderphi/-/raw/main/releases/blenderphi-v4.5.5/blenderphi-v4.5.5-karolina-linux-x64-gcc13.tar.xz' -OutFile 'blenderphi.tar.xz'"
+REM powershell -Command "Invoke-WebRequest -Uri 'https://code.it4i.cz/raas/blenderphi/-/raw/main/releases/blenderphi-v4.5.5/blenderphi-v4.5.5-karolina-linux-x64-gcc13.tar.xz' -OutFile 'blenderphi.tar.xz'"
 
 REM Transfer BlenderPhi archive to MareNostrum5 cluster
 echo Transferring BlenderPhi archive to MareNostrum5...
@@ -32,15 +32,17 @@ REM ######################################################################
 
 REM Download braas-hpc-interactive for Linux
 echo Downloading braas-hpc-interactive for Linux...
-powershell -Command "Invoke-WebRequest -Uri 'https://github.com/It4innovations/braas-hpc-interactive/-/archive/main/braas-hpc-interactive-main.tar.gz' -OutFile 'braas-hpc-interactive-main.tar.gz'"
+powershell -Command "Invoke-WebRequest -Uri 'https://github.com/It4innovations/braas-hpc-interactive/archive/refs/heads/main.zip' -OutFile 'braas-hpc-interactive-main.zip'"
 
 REM Transfer braas-hpc-interactive archive to MareNostrum5 cluster
 echo Transferring braas-hpc-interactive archive to MareNostrum5...
-scp braas-hpc-interactive-main.tar.gz MareNostrum5:~/braas-hpc-interactive.tar.gz
+scp braas-hpc-interactive-main.zip MareNostrum5:~/braas-hpc-interactive.zip
 
 REM Run the Linux installation script
 echo Running installation script on MareNostrum5...
-ssh MareNostrum5 "if [ -d ~/braas-hpc-interactive ] ; then rm -rf ~/braas-hpc-interactive ; fi ; cd ~/ ; tar -xf braas-hpc-interactive.tar.gz ; mv braas-hpc-interactive-main ~/braas-hpc-interactive ; rm braas-hpc-interactive.tar.gz ;"
+ssh MareNostrum5 "if [ -d ~/braas-hpc-interactive ] ; then rm -rf ~/braas-hpc-interactive ; fi ; cd ~/ ; unzip braas-hpc-interactive.zip ; mv braas-hpc-interactive-main ~/braas-hpc-interactive ; rm braas-hpc-interactive.zip ;"
 
 REM ######################################################################
 echo Installation completed.
+
+pause
