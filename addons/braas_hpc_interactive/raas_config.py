@@ -29,7 +29,7 @@ interactive_type_items = [
 
     # TODO: implement other interactive types
     # ("CYCLESPHI", "CyclesPhi", ""),
-    # ("PYNARI", "pynari", ""),
+    ("PYNARI", "pynari", ""),
     # ("HAYSTACK", "HayStack", ""),
 ]
 ##################################################################
@@ -247,7 +247,7 @@ def GetDAInteractiveScript(context):
         job_type = blender_job_info['job_type']
 
     except:
-        pass
+        print('Could not read blender_job_info_json, using defaults: job_type = JOB_CPU.')
 
     raas_interactive_type = context.scene.raas_interactive_type
 
@@ -425,57 +425,72 @@ def GetDAInteractiveScript(context):
     else:
         return None
     
-# def GetDASupportSSHProxyJump(context):
+def GetDASupportSSHProxyJump(context):
 
-#     blender_job_info_new = context.scene.raas_blender_job_info_new
-#     cluster_type = blender_job_info_new.cluster_type
-#     job_type = blender_job_info_new.job_type
+    idx = context.scene.raas_list_jobs_index
 
-#     # BARBORA
-#     if cluster_type == 'BARBORA':
-#         return False   
+    if idx == -1:
+        raise Exception('No job selected.')
+
+    item = context.scene.raas_list_jobs[idx]
+
+    cluster_type = item.ClusterName
+
+    # Try to read blender_job_info_json
+    try:
+        import json
+        blender_job_info = json.loads(item.blender_job_info_json)
+
+        cluster_type = blender_job_info['cluster_type']
+    except:
+        # print('Could not read blender_job_info_json, using defaults: job_type = JOB_CPU.')
+        pass
+
+    # BARBORA
+    if cluster_type == 'BARBORA':
+        return False   
         
-#     # KAROLINA
-#     elif cluster_type == 'KAROLINA':
-#         return False
+    # KAROLINA
+    elif cluster_type == 'KAROLINA':
+        return False
                                           
-#     # LUMI
-#     elif cluster_type == 'LUMI':     
-#         return False
+    # LUMI
+    elif cluster_type == 'LUMI':     
+        return False
 
-#     # LEONARDO
-#     elif cluster_type == 'LEONARDO':
-#         return False
+    # LEONARDO
+    elif cluster_type == 'LEONARDO':
+        return False
                 
-#     # "MARENOSTRUM5GPP": "MareNostrum 5 GPP",
-#     elif cluster_type == 'MARENOSTRUM5GPP':
-#         return False
+    # "MARENOSTRUM5GPP": "MareNostrum 5 GPP",
+    elif cluster_type == 'MARENOSTRUM5GPP':
+        return False
     
-#     # "MARENOSTRUM5ACC": "MareNostrum 5 ACC",
-#     elif cluster_type == 'MARENOSTRUM5ACC':
-#         return False
+    # "MARENOSTRUM5ACC": "MareNostrum 5 ACC",
+    elif cluster_type == 'MARENOSTRUM5ACC':
+        return False
 
-#     # "POLARIS": "Polaris",
-#     elif cluster_type == 'POLARIS':
-#         return False
+    # "POLARIS": "Polaris",
+    elif cluster_type == 'POLARIS':
+        return False
 
-#     # "AURORA": "Aurora",
-#     elif cluster_type == 'AURORA':
-#         return False
+    # "AURORA": "Aurora",
+    elif cluster_type == 'AURORA':
+        return False
     
-#     # "VISTA": "Vista",
-#     elif cluster_type == 'VISTA':
-#         return False  
+    # "VISTA": "Vista",
+    elif cluster_type == 'VISTA':
+        return False  
         
-#     # "FRONTERA": "Frontera",
-#     elif cluster_type == 'FRONTERA':
-#         return False
+    # "FRONTERA": "Frontera",
+    elif cluster_type == 'FRONTERA':
+        return False
     
-#     elif cluster_type == 'CS':
-#         return True    
+    elif cluster_type == 'CS':
+        return True    
 
-#     else:
-#         return False        
+    else:
+        return False
 
 def GetGitAddonCommand(repository, branch):    
     return 'if [ -d ~/braas-hpc-interactive ] ; then rm -rf ~/braas-hpc-interactive ; fi ; git clone -q -b ' + branch + ' ' + repository
@@ -518,7 +533,7 @@ class RaasInteractiveConfigFunctions:
 
         ########################New
         self.get_da_interactive_script = GetDAInteractiveScript
-        # self.get_da_support_ssh_proxy_jump = GetDASupportSSHProxyJump
+        self.get_da_support_ssh_proxy_jump = GetDASupportSSHProxyJump
         self.create_job_interactive = CreateJob
         self.get_git_addon_command_interactive = GetGitAddonCommand
         self.get_blenderphi_install_command = GetBlenderPhiInstallCommand
@@ -604,6 +619,6 @@ class RaasInteractiveConfigFunctions:
         """Gets DA interactive script"""
         return self.get_da_interactive_script(context)
     
-    # def call_get_da_support_ssh_proxy_jump(self, context):
-    #     """Gets DA support SSH proxy jump"""
-    #     return self.get_da_support_ssh_proxy_jump(context)
+    def call_get_da_support_ssh_proxy_jump(self, context):
+        """Gets DA support SSH proxy jump"""
+        return self.get_da_support_ssh_proxy_jump(context)

@@ -88,10 +88,6 @@ def CmdCreateSLURMJob(context):
     sharedBasepath = f'{braas_hpc.raas_connection.get_direct_access_remote_storage(context)}/{remote_storage_interactive}/interactive'
 
     da_interactive_script = context.scene.raas_config_functions.call_get_da_interactive_script(context)
-    # if raas_config.GetDASupportSSHProxyJump(context):
-    # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-    #     cmd = f"cd {sharedBasepath}; {da_interactive_script}"
-    # else:
     pid_name, pid_queue, pid_dir = context.scene.raas_config_functions.call_get_current_pid_info(context, braas_hpc.raas_pref.preferences())
 
     custom_flags = ''
@@ -104,7 +100,10 @@ def CmdCreateSLURMJob(context):
     except Exception:
         pass
 
-    cmd = f"cd {sharedBasepath}; srun --overlap -n 1 --jobid={jobid} {custom_flags} {da_interactive_script} {server_port}"
+    if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
+        cmd = f"cd {sharedBasepath}; {da_interactive_script} {server_port}"
+    else:
+        cmd = f"cd {sharedBasepath}; srun --overlap -n 1 --jobid={jobid} {custom_flags} {da_interactive_script} {server_port}"
 
     print(cmd)
     return cmd, node, jobid, server_port

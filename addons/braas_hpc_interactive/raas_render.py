@@ -67,7 +67,14 @@ class RAASINTERACTIVE_OT_run_interactive_command(
 
             if not await self.authenticate(context):
                 self.quit()
-                return            
+                return
+            
+            ##################################################
+            try:
+                bpy.ops.pynari_composer.generate_code_tree()
+            except:
+                pass
+            ##################################################
 
             prefs = braas_hpc.raas_pref.preferences()
 
@@ -153,11 +160,10 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             #     remote_port = server_settings.braas_hpc_renderengine_port
 
             #TODO: MJ !!!
-            # if raas_config.GetDASupportSSHProxyJump(context):
-            # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-            #     context.scene.raas_session.create_ssh_command_jump(key_file, destination, node, local_port, remote_port, cmd)
-            # else:
-            context.scene.raas_session.create_ssh_command(key_file, destination, local_port, node, remote_port, cmd)
+            if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
+                context.scene.raas_session.create_ssh_command_jump(key_file, destination, node, local_port, remote_port, cmd)
+            else:
+                context.scene.raas_session.create_ssh_command(key_file, destination, local_port, node, remote_port, cmd)
 
             # item = context.scene.raas_submitted_job_info_ext_new
             # asyncio.gather(ListSchedulerJobsForCurrentUser(context, self.token))
@@ -197,11 +203,10 @@ class RAASINTERACTIVE_OT_stop_interactive_command(
 
         try:
             #TODO: MJ !!!
-            # if raas_config.GetDASupportSSHProxyJump(context):
-            # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-            #     context.scene.raas_session.close_ssh_command_jump() 
-            # else:
-            context.scene.raas_session.close_ssh_command()
+            if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
+                context.scene.raas_session.close_ssh_command_jump() 
+            else:
+                context.scene.raas_session.close_ssh_command()
 
         except Exception as e:
             #print('Problem with downloading files:')
@@ -236,8 +241,8 @@ class RAASINTERACTIVE_OT_submit_job(
 
             if not await self.authenticate(context):
                 self.quit()
-                return         
-
+                return
+            
             #scene = context.scene
             raas_interactive_type = context.scene.raas_interactive_type
             prefs = braas_hpc.raas_pref.preferences()
@@ -272,8 +277,8 @@ class RAASINTERACTIVE_OT_submit_job(
             from datetime import datetime
             dt = datetime.now().isoformat('-').replace(':', '').replace('.', '')
             unique_dir = '%s-%s' % (dt[0:19], context.scene.raas_blender_job_info_new.job_project)
-            outdir = Path(prefs.raas_job_storage_path) / unique_dir / 'in'
-            outdir.mkdir(parents=True)
+            outdir_in = Path(prefs.raas_job_storage_path) / unique_dir / 'in'
+            outdir_in.mkdir(parents=True)
 
             # missing_sources = None
 
@@ -285,7 +290,7 @@ class RAASINTERACTIVE_OT_submit_job(
                 if context.scene.raas_blender_job_info_new.file_type == 'DEFAULT':
                     # Save to a different file, specifically for Raas.
                     context.window_manager.raas_status = 'SAVING'
-                    filepath = await braas_hpc.raas_render.submit_job_save_blendfile(context, outdir)
+                    filepath = await braas_hpc.raas_render.submit_job_save_blendfile(context, outdir_in)
                     context.scene.raas_blender_job_info_new.blendfile = filepath.name
 
                 else: #OTHER
@@ -293,7 +298,7 @@ class RAASINTERACTIVE_OT_submit_job(
 
                 if context.scene.raas_blender_job_info_new.file_type == 'DEFAULT':
                     # BAT-pack the files to the destination directory.
-                    missing_sources = await braas_hpc.raas_render.submit_job_bat_pack(filepath, context.scene.raas_blender_job_info_new.job_project, outdir)
+                    missing_sources = await braas_hpc.raas_render.submit_job_bat_pack(filepath, context.scene.raas_blender_job_info_new.job_project, outdir_in)
 
                     # remove files
                     self.log.info("Removing temporary file %s", filepath)
@@ -301,7 +306,7 @@ class RAASINTERACTIVE_OT_submit_job(
                 else:                  
 
                     from distutils.dir_util import copy_tree
-                    copy_tree(bpy.path.abspath(context.scene.raas_blender_job_info_new.blendfile_dir), str(outdir))
+                    copy_tree(bpy.path.abspath(context.scene.raas_blender_job_info_new.blendfile_dir), str(outdir_in))                   
 
                 outdir_interactive = Path(prefs.raas_job_storage_path) / unique_dir / 'interactive'
                 outdir_interactive.mkdir(parents=True)
@@ -310,6 +315,46 @@ class RAASINTERACTIVE_OT_submit_job(
                 file_path_interactive = str(outdir_interactive / 'blendfile')  # or your desired path
                 with open(file_path_interactive, 'w') as f:
                     f.write(f'in/{filepath.name}') # TODO: context.scene.raas_blender_job_info_new.file_type != 'DEFAULT'
+
+
+            ###################### Save Job Info
+            import json
+            
+            # Serialize raas_blender_job_info_new to JSON
+            job_info = context.scene.raas_blender_job_info_new
+            job_info_dict = {
+                'job_name': job_info.job_name,
+                'job_email': job_info.job_email,
+                'job_project': job_info.job_project,
+                'job_walltime': job_info.job_walltime,
+                'job_walltime_pre': job_info.job_walltime_pre,
+                'job_walltime_post': job_info.job_walltime_post,
+                'max_jobs': job_info.max_jobs,
+                'job_arrays': job_info.job_arrays,
+                'job_type': job_info.job_type,
+                'job_remote_dir': job_info.job_remote_dir,
+                'job_allocation': job_info.job_allocation,
+                'job_partition': job_info.job_partition,
+                'frame_start': job_info.frame_start,
+                'frame_end': job_info.frame_end,
+                'frame_current': job_info.frame_current,
+                'render_type': job_info.render_type,
+                'cluster_type': job_info.cluster_type,
+                'file_type': job_info.file_type,
+                'blendfile_dir': job_info.blendfile_dir,
+                'blendfile': job_info.blendfile,
+                'raas_interactive_type': raas_interactive_type
+            }
+            
+            # Create job directory and save job.info file
+            outdir_job = Path(prefs.raas_job_storage_path) / unique_dir / 'job'
+            outdir_job.mkdir(parents=True, exist_ok=True)
+            job_info_path = outdir_job / 'job.info'
+            
+            with open(job_info_path, 'w') as f:
+                json.dump(job_info_dict, f, indent=4)
+
+            ######################                     
 
             context.scene.render.engine = engine_old
 
@@ -373,87 +418,67 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
         else:
             layout.enabled = False        
 
-        #header
-        # box = layout.box()
-
-        # row = box.row()   
-
-        # col = row.column()        
-        # col.label(text="Id")
-        # col = row.column()
-        # col.label(text="Project")        
-        # col = row.column()
-        # col.label(text="Cluster")        
-        # col = row.column()
-        # col.label(text="State")        
-        
-        # #table
-        # row = layout.row()
-        # row.template_list("RAAS_UL_SubmittedJobInfoExt", "", context.scene, "raas_list_jobs", context.scene, "raas_list_jobs_index")
-
-        # #button
-        # row = layout.row()
-        # row.operator(RAAS_OT_ListJobsForCurrentUser.bl_idname, text='Refresh')
-        # row.operator(RAAS_OT_CancelJob.bl_idname, text='Cancel')
-
-        # idx = context.scene.raas_list_jobs_index        
-
-        # if idx != -1 and len(context.scene.raas_list_jobs) > 0:
-
-        #     item = context.scene.raas_list_jobs[idx]   
         box = layout.box()
-        # box.enabled = False
 
-        # box.label(text=('Job: %d' % item.Id))
-        # box.prop(item, "Name")
-        # box.prop(item, "Project")
-        # box.prop(item, "SubmitTime")
-        # box.prop(item, "StartTime")
-        # box.prop(item, "EndTime")
+        ###########################################        
+        idx = context.scene.raas_list_jobs_index
 
-        # #row = box.column()            
-        # box.prop(item, "State")
+        if idx == -1:
+            raise Exception('No job selected.')
 
-        # box = layout.box()
+        item = context.scene.raas_list_jobs[idx]
 
-        # local_storage = str(raas_connection.get_job_local_storage(item.Name))
-        # paths_layout = box.column(align=True)
-        # labeled_row = paths_layout.split(**raas_pref.factor(0.25), align=True)
-        # labeled_row.label(text='Storage Path:')
-        # prop_btn_row = labeled_row.row(align=True)
-        # prop_btn_row.label(text=local_storage)
-        # props = prop_btn_row.operator(RAAS_OT_explore_file_path.bl_idname,
-        #                             text='', icon='DISK_DRIVE')
-        # props.path = local_storage
+        raas_interactive_type = None
+        # show_raas_interactive_command = False
 
-        col = box.column()
-        col.prop(context.scene, "raas_interactive_type")
-        col.operator(RAASINTERACTIVE_OT_submit_job.bl_idname, text='Submit Interactive Job')
-        # col.operator(RAASINTERACTIVE_OT_download_files.bl_idname, text='Download information')
+        if 'raas_interactive_type' in item.blender_job_info_json:
 
-        # if item.InteractiveMode:                
-        # if context.scene.raas_session.ssh_tunnel_proc is None or not context.scene.raas_session.ssh_tunnel_proc.is_running():
-        #     row = box.row()
-        #     row.operator(RAAS_OT_connect_to_client.bl_idname, text='Connect to Client')
+            # Try to read blender_job_info_json
+            try:
+                import json
+                blender_job_info = json.loads(item.blender_job_info_json)
+
+                raas_interactive_type = blender_job_info['raas_interactive_type']
+
+            except:
+                # print('Could not read blender_job_info_json, using defaults: job_type = JOB_CPU.')
+                pass
+
+        ###########################################
+
+        ssh_command_running = False
+
+        if context.scene.raas_session.ssh_command_jump_proc and context.scene.raas_session.ssh_command_jump_proc.is_running():
+            ssh_command_running = True
+
+        elif context.scene.raas_session.ssh_command_proc and context.scene.raas_session.ssh_command_proc.is_running():
+            ssh_command_running = True
+
+        # show_raas_interactive_command = (context.scene.raas_session.ssh_command_proc is None) and (context.scene.raas_session.ssh_command_jump_proc is None or not context.scene.raas_session.ssh_command_jump_proc.is_running())
         # else:
-        #     row = box.row()
-        #     row.operator(RAAS_OT_disconnect_from_client.bl_idname, text='Disconnect from Client')
+        #     show_raas_interactive_command = context.scene.raas_session.ssh_command_proc is None or not context.scene.raas_session.ssh_command_proc.is_running()
 
-        # if raas_config.GetDASupportSSHProxyJump(context):
+        ###########################################
+
+        if not ssh_command_running:
+            col = box.column()
+            col.prop(context.scene, "raas_interactive_type")
+            col.operator(RAASINTERACTIVE_OT_submit_job.bl_idname, text='Submit Interactive Job')
+
         # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
         #     show_raas_interactive_command = context.scene.raas_session.ssh_command_jump_proc is None or not context.scene.raas_session.ssh_command_jump_proc.is_running()
         # else:
-        show_raas_interactive_command = context.scene.raas_session.ssh_command_proc is None or not context.scene.raas_session.ssh_command_proc.is_running()
+        #     show_raas_interactive_command = context.scene.raas_session.ssh_command_proc is None or not context.scene.raas_session.ssh_command_proc.is_running()
 
-
-        if show_raas_interactive_command:
+        if raas_interactive_type and not ssh_command_running:
             col = box.column()
-            
+
             if context.scene.raas_interactive_type == 'PYNARI':
                 col.prop(context.scene, "raas_interactive_command")
 
             col.operator(RAASINTERACTIVE_OT_run_interactive_command.bl_idname, text='Run Interactive Command')
-        else:
+        
+        if raas_interactive_type and ssh_command_running:
             row = box.row()
             row.operator(RAASINTERACTIVE_OT_stop_interactive_command.bl_idname, text='Stop Interactive Command')
 
