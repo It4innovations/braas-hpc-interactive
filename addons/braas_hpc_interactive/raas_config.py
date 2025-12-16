@@ -28,9 +28,15 @@ interactive_type_items = [
     ("BLENDERPHI", "BlenderPhi", ""),
 
     # TODO: implement other interactive types
-    # ("CYCLESPHI", "CyclesPhi", ""),
+    ("CYCLESPHI", "CyclesPhi", ""),
     ("PYNARI", "pynari", ""),
-    # ("HAYSTACK", "HayStack", ""),
+    ("HAYSTACK", "HayStack", ""),
+]
+
+cyclesphi_type_items = [
+    ("BLEND_CURRENT", "Current Blender File", ""),
+    ("BLEND_REMOTE", "Remote Blender File", ""),
+    ("XML_REMOTE", "Remote XML File", ""),
 ]
 ##################################################################
 

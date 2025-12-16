@@ -70,10 +70,11 @@ class RAASINTERACTIVE_OT_run_interactive_command(
                 return
             
             ##################################################
-            try:
-                bpy.ops.pynari_composer.generate_code_tree()
-            except:
-                pass
+            # TODO:
+            # try:
+            #     bpy.ops.pynari_composer.generate_code_tree()
+            # except:
+            #     pass
             ##################################################
 
             prefs = braas_hpc.raas_pref.preferences()
@@ -126,6 +127,18 @@ class RAASINTERACTIVE_OT_run_interactive_command(
                 await braas_hpc.raas_connection.transfer_files_to_cluster(context, fileTransfer, str(local_storage_interactive), remote_storage_interactive, item.Id, self.token)
                 await braas_hpc.raas_connection.end_transfer_files(context, fileTransfer, item.Id, self.token)
 
+            elif raas_interactive_type == 'CYCLESPHI' and (context.scene.raas_interactive_cyclesphi_type == 'XML_REMOTE' or context.scene.raas_interactive_cyclesphi_type == 'BLEND_REMOTE'):
+                remote_storage_interactive = str(braas_hpc.raas_connection.convert_path_to_linux(item.Name))
+                local_storage_interactive = braas_hpc.raas_connection.get_job_local_storage(item.Name) / 'interactive'
+
+                # Write to file
+                file_path_interactive = str(local_storage_interactive / 'blendfile')  # or your desired path
+                with open(file_path_interactive, 'w') as f:
+                    f.write(f'{context.scene.raas_interactive_cyclesphi_file}')
+
+                await braas_hpc.raas_connection.transfer_files_to_cluster(context, fileTransfer, str(local_storage_interactive), remote_storage_interactive, item.Id, self.token)
+                await braas_hpc.raas_connection.end_transfer_files(context, fileTransfer, item.Id, self.token)
+
             else:
                 await braas_hpc.raas_connection.end_transfer_files(context, fileTransfer, item.Id, self.token)
 
@@ -139,6 +152,9 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             #cmd = f'{raas_config.GetDAInteractiveScript(context)} {remote_storage_interactive}/{command_file_name} > {remote_storage_interactive}/command.log 2> {remote_storage_interactive}/command.err &'
 
             cmd, node, jobid, server_port = raas_jobs.CmdCreateJob(context)
+
+            if raas_interactive_type == 'CYCLESPHI' and (context.scene.raas_interactive_cyclesphi_type == 'XML_REMOTE' or context.scene.raas_interactive_cyclesphi_type == 'BLEND_REMOTE'):
+                cmd = f'{cmd} {context.scene.raas_interactive_cyclesphi_file}'
 
             #await raas_connection.ssh_command_jump(server, node, cmd, preset)
             # prefs = raas_pref.preferences()
@@ -286,7 +302,7 @@ class RAASINTERACTIVE_OT_submit_job(
             context.scene.render.engine = 'CYCLES'
             
             # Prepare blend file
-            if raas_interactive_type == 'BLENDERPHI':
+            if raas_interactive_type == 'BLENDERPHI' or (raas_interactive_type == 'CYCLESPHI' and context.scene.raas_interactive_cyclesphi_type == 'BLEND_CURRENT'):
                 if context.scene.raas_blender_job_info_new.file_type == 'DEFAULT':
                     # Save to a different file, specifically for Raas.
                     context.window_manager.raas_status = 'SAVING'
@@ -343,7 +359,9 @@ class RAASINTERACTIVE_OT_submit_job(
                 'file_type': job_info.file_type,
                 'blendfile_dir': job_info.blendfile_dir,
                 'blendfile': job_info.blendfile,
-                'raas_interactive_type': raas_interactive_type
+                'raas_interactive_type': raas_interactive_type,
+                'raas_interactive_cyclesphi_type': context.scene.raas_interactive_cyclesphi_type,
+                'raas_interactive_cyclesphi_file': context.scene.raas_interactive_cyclesphi_file
             }
             
             # Create job directory and save job.info file
@@ -462,7 +480,13 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
 
         if not ssh_command_running:
             col = box.column()
+            
             col.prop(context.scene, "raas_interactive_type")
+            if context.scene.raas_interactive_type == 'CYCLESPHI':
+                col.prop(context.scene, "raas_interactive_cyclesphi_type")
+                if context.scene.raas_interactive_cyclesphi_type != 'BLEND_CURRENT':
+                    col.prop(context.scene, "raas_interactive_cyclesphi_file")
+
             col.operator(RAASINTERACTIVE_OT_submit_job.bl_idname, text='Submit Interactive Job')
 
         # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
@@ -542,6 +566,15 @@ def register():
         items=raas_config.interactive_type_items
     )
 
+    scene.raas_interactive_cyclesphi_type = bpy.props.EnumProperty(
+        name='CyclesPhi Type',
+        items=raas_config.cyclesphi_type_items
+    )
+
+    scene.raas_interactive_cyclesphi_file = bpy.props.StringProperty(
+        name='CyclesPhi File',
+        default=''
+    )
     #################################
 
 def unregister():
