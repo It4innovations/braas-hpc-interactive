@@ -181,6 +181,23 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             else:
                 context.scene.raas_session.create_ssh_command(key_file, destination, local_port, node, remote_port, cmd)
 
+            # Wait 3 seconds after creating SSH command
+            #await asyncio.sleep(10)
+            max_attempts = 10
+            for attempt in range(max_attempts):
+                ssh_command_running = False
+
+                if context.scene.raas_session.ssh_command_jump_proc and context.scene.raas_session.ssh_command_jump_proc.is_running():
+                    ssh_command_running = True
+
+                elif context.scene.raas_session.ssh_command_proc and context.scene.raas_session.ssh_command_proc.is_running():
+                    ssh_command_running = True
+
+                if ssh_command_running:
+                    break
+
+                await asyncio.sleep(1)
+
             # item = context.scene.raas_submitted_job_info_ext_new
             # asyncio.gather(ListSchedulerJobsForCurrentUser(context, self.token))
             
@@ -439,28 +456,24 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
         box = layout.box()
 
         ###########################################        
-        idx = context.scene.raas_list_jobs_index
-
-        if idx == -1:
-            raise Exception('No job selected.')
-
-        item = context.scene.raas_list_jobs[idx]
-
         raas_interactive_type = None
-        # show_raas_interactive_command = False
+        # Try to read blender_job_info_json
+        try:
+            idx = context.scene.raas_list_jobs_index
 
-        if 'raas_interactive_type' in item.blender_job_info_json:
+            if idx == -1:
+                raise Exception('No job selected.')
 
-            # Try to read blender_job_info_json
-            try:
+            item = context.scene.raas_list_jobs[idx]
+
+            if 'raas_interactive_type' in item.blender_job_info_json:
                 import json
                 blender_job_info = json.loads(item.blender_job_info_json)
 
                 raas_interactive_type = blender_job_info['raas_interactive_type']
 
-            except:
-                # print('Could not read blender_job_info_json, using defaults: job_type = JOB_CPU.')
-                pass
+        except:
+            pass
 
         ###########################################
 
