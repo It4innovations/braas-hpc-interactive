@@ -164,9 +164,19 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             
             # username = preset.raas_da_username
             key_file = preset.raas_private_key_path
-            destination = serverHostname #f"{username}@{serverHostname}"
+            key_password = preset.raas_private_key_password
+            password = preset.raas_da_password if preset.raas_da_use_password else None
+            ssh_library = preset.raas_ssh_library
+            
+            # When proxy jump is enabled:
+            # - serverHostname is the jump/frontend host
+            # - node is the destination compute node
+            # When proxy jump is disabled:
+            # - serverHostname is the direct destination
+            jump_host = serverHostname
+            destination = node
 
-            #create_ssh_command_jump(self, key_file, jump_host, destination, command)
+            #create_ssh_command_jump(self, key_file, key_password, password, jump_host, destination, node, local_port, remote_port, command, ssh_library, auto_restart)
             local_port = server_port
             remote_port = server_port
 
@@ -177,9 +187,15 @@ class RAASINTERACTIVE_OT_run_interactive_command(
 
             #TODO: MJ !!!
             if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-                context.scene.raas_session.create_ssh_command_jump(key_file, destination, node, local_port, remote_port, cmd)
+                context.scene.raas_interactive_session.create_ssh_command_jump(
+                    key_file, key_password, password, jump_host, destination, 
+                    "localhost", local_port, remote_port, cmd, ssh_library, auto_restart=False
+                )
             else:
-                context.scene.raas_session.create_ssh_command(key_file, destination, local_port, node, remote_port, cmd)
+                context.scene.raas_interactive_session.create_ssh_command(
+                    key_file, key_password, password, serverHostname, 
+                    "localhost", local_port, remote_port, cmd, ssh_library, auto_restart=False
+                )
 
             # Wait 3 seconds after creating SSH command
             #await asyncio.sleep(10)
@@ -187,10 +203,10 @@ class RAASINTERACTIVE_OT_run_interactive_command(
             for attempt in range(max_attempts):
                 ssh_command_running = False
 
-                if context.scene.raas_session.ssh_command_jump_proc and context.scene.raas_session.ssh_command_jump_proc.is_running():
+                if context.scene.raas_interactive_session.ssh_command_jump_proc and context.scene.raas_interactive_session.ssh_command_jump_proc.is_running():
                     ssh_command_running = True
 
-                elif context.scene.raas_session.ssh_command_proc and context.scene.raas_session.ssh_command_proc.is_running():
+                elif context.scene.raas_interactive_session.ssh_command_proc and context.scene.raas_interactive_session.ssh_command_proc.is_running():
                     ssh_command_running = True
 
                 if ssh_command_running:
@@ -237,9 +253,9 @@ class RAASINTERACTIVE_OT_stop_interactive_command(
         try:
             #TODO: MJ !!!
             if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-                context.scene.raas_session.close_ssh_command_jump() 
+                context.scene.raas_interactive_session.close_ssh_command_jump() 
             else:
-                context.scene.raas_session.close_ssh_command()
+                context.scene.raas_interactive_session.close_ssh_command()
 
         except Exception as e:
             #print('Problem with downloading files:')
@@ -479,15 +495,15 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
 
         ssh_command_running = False
 
-        if context.scene.raas_session.ssh_command_jump_proc and context.scene.raas_session.ssh_command_jump_proc.is_running():
+        if context.scene.raas_interactive_session.ssh_command_jump_proc and context.scene.raas_interactive_session.ssh_command_jump_proc.is_running():
             ssh_command_running = True
 
-        elif context.scene.raas_session.ssh_command_proc and context.scene.raas_session.ssh_command_proc.is_running():
+        elif context.scene.raas_interactive_session.ssh_command_proc and context.scene.raas_interactive_session.ssh_command_proc.is_running():
             ssh_command_running = True
 
-        # show_raas_interactive_command = (context.scene.raas_session.ssh_command_proc is None) and (context.scene.raas_session.ssh_command_jump_proc is None or not context.scene.raas_session.ssh_command_jump_proc.is_running())
+        # show_raas_interactive_command = (context.scene.raas_interactive_session.ssh_command_proc is None) and (context.scene.raas_interactive_session.ssh_command_jump_proc is None or not context.scene.raas_interactive_session.ssh_command_jump_proc.is_running())
         # else:
-        #     show_raas_interactive_command = context.scene.raas_session.ssh_command_proc is None or not context.scene.raas_session.ssh_command_proc.is_running()
+        #     show_raas_interactive_command = context.scene.raas_interactive_session.ssh_command_proc is None or not context.scene.raas_interactive_session.ssh_command_proc.is_running()
 
         ###########################################
 
@@ -503,9 +519,9 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
             col.operator(RAASINTERACTIVE_OT_submit_job.bl_idname, text='Submit Interactive Job')
 
         # if context.scene.raas_config_functions.call_get_da_support_ssh_proxy_jump(context):
-        #     show_raas_interactive_command = context.scene.raas_session.ssh_command_jump_proc is None or not context.scene.raas_session.ssh_command_jump_proc.is_running()
+        #     show_raas_interactive_command = context.scene.raas_interactive_session.ssh_command_jump_proc is None or not context.scene.raas_interactive_session.ssh_command_jump_proc.is_running()
         # else:
-        #     show_raas_interactive_command = context.scene.raas_session.ssh_command_proc is None or not context.scene.raas_session.ssh_command_proc.is_running()
+        #     show_raas_interactive_command = context.scene.raas_interactive_session.ssh_command_proc is None or not context.scene.raas_interactive_session.ssh_command_proc.is_running()
 
         if raas_interactive_type and not ssh_command_running:
             col = box.column()
@@ -522,19 +538,21 @@ class RAASINTERACTIVE_PT_ListJobs(braas_hpc.raas_render.RaasButtonsPanel, Panel)
 
 ######################CLEANUP###########################  
 @bpy.app.handlers.persistent
-def cleanup_on_exit():
+def cleanup_on_exit(dummy=None, *args):
     """Cleanup SSH connections and tunnels when Blender exits"""
     try:
         if hasattr(bpy.context.scene, 'raas_interactive_session'):
             session = bpy.context.scene.raas_interactive_session
             if session:
+                print("[cleanup_on_exit] Closing SSH connections (interactive)...")
                 session.close_ssh_tunnel()
-                # session.close_ssh_command()
-                # session.close_ssh_command_jump()
-                # session.paramiko_close()                
+                session.close_ssh_command()
+                session.close_ssh_command_jump()
+                # session.paramiko_close()
+                print("[cleanup_on_exit] SSH connections closed successfully (interactive)")                
 
     except Exception as e:
-        print(f"Error during cleanup: {e}")
+        print(f"[cleanup_on_exit] Error during cleanup (interactive): {e}")
 
 #################################################
 

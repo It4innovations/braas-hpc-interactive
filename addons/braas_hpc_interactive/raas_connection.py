@@ -53,6 +53,193 @@ def get_job_remote_storage_interactive(job_name):
     return remote_storage_interactive
 
 ############################################################################
+class SSHCommand(braas_hpc.raas_connection.SSHProcess):
+    """
+    SSH command execution using native OpenSSH.
+    - Execute commands on remote host
+    - Capture stdout/stderr
+    - Support for long-running commands (infinite loops)
+    """
+    def __init__(
+        self,
+        user_host: str,                 # e.g. "user@remote-host"
+        local_port: int,
+        remote_host: str,
+        remote_port: int,        
+        command: str,                   # command to execute
+        identity_file: str | None = None,
+        ssh_path: str | None = None,    # path to ssh binary, default is found in PATH
+        extra_ssh_opts: list[str] | None = None,
+        auto_restart: bool = False      # Auto-restart for long-running commands
+    ):
+        super().__init__(
+            user_host=user_host,
+            identity_file=identity_file,
+            auto_restart=auto_restart,
+            check_interval_sec=5.0 if auto_restart else 0,
+            ssh_path=ssh_path,
+            extra_ssh_opts=extra_ssh_opts
+        )
+        self.command = command
+        self.local_port = local_port
+        self.remote_host = remote_host
+        self.remote_port = remote_port
+
+        self._stdout: str | None = None
+        self._stderr: str | None = None
+        self._returncode: int | None = None
+
+    def _build_cmd(self) -> list[str]:
+        cmd = [
+            self.ssh_path,
+            "-T",                     # no TTY
+            "-o", "StrictHostKeyChecking=no",  # auto-accept host keys
+            "-o", "UserKnownHostsFile=/dev/null",  # don't save host keys
+            "-o", "ServerAliveInterval=30",
+            "-o", "ServerAliveCountMax=3",
+            "-o", "TCPKeepAlive=yes",
+            "-L", f"{self.local_port}:{self.remote_host}:{self.remote_port}",
+        ]
+
+        if self.identity_file:
+            cmd += ["-i", self.identity_file]
+
+        # Add extra options (e.g., ProxyJump, Port, etc.)
+        cmd += self.extra_ssh_opts
+
+        cmd.append(self.user_host)
+        # Wrap command in bash -c to properly handle shell metacharacters
+        # cmd.append("bash")
+        # cmd.append("-c")
+        cmd.append(self.command)
+        return cmd
+
+    def start(self):
+        """Start the SSH command process and keep it running (for long-running commands)."""
+        print(f"[{self.__class__.__name__}] Starting SSH command: {self.command}")
+        super().start()
+
+    def execute(self, timeout: float | None = None) -> tuple[str, str, int]:
+        """
+        Execute the SSH command synchronously and return (stdout, stderr, returncode).
+        Use this for short-lived commands that complete.
+        
+        Args:
+            timeout: Maximum time to wait for command completion
+            
+        Returns:
+            Tuple of (stdout, stderr, returncode)
+        """
+        print(f"[{self.__class__.__name__}] Executing SSH command: {self.command}")
+        self._start_process()
+        
+        try:
+            stdout, stderr = self._proc.communicate(timeout=timeout)
+            self._stdout = stdout
+            self._stderr = stderr
+            self._returncode = self._proc.returncode
+            
+            if stdout:
+                self._log_output("STDOUT", stdout)
+            if stderr:
+                self._log_output("STDERR", stderr)
+                
+            print(f"[{self.__class__.__name__}] Command completed with return code: {self._returncode}")
+        except subprocess.TimeoutExpired:
+            print(f"[{self.__class__.__name__}] Command timed out after {timeout}s")
+            self._kill_proc()
+            raise TimeoutError(f"SSH command timed out after {timeout}s")
+        finally:
+            self._proc = None
+        
+        return self._stdout, self._stderr, self._returncode
+
+    @property
+    def stdout(self) -> str | None:
+        """Get stdout from last execution."""
+        return self._stdout
+
+    @property
+    def stderr(self) -> str | None:
+        """Get stderr from last execution."""
+        return self._stderr
+
+    @property
+    def returncode(self) -> int | None:
+        """Get return code from last execution."""
+        return self._returncode
+    
+    def is_running(self) -> bool:
+        """Check if the SSH command process is currently running."""
+        return self._is_healthy()
+
+
+class SSHCommandJump(SSHCommand):
+    """
+    SSH command execution through a jump host using ProxyJump.
+    - Execute commands on remote host via jump host
+    - Support for long-running commands (infinite loops)
+    - Automatic ProxyJump configuration
+    """
+    def __init__(
+        self,
+        user_host: str,                 # e.g. "user@remote-host" (final destination)
+        jump_host: str,                 # e.g. "user@jump-host" (intermediate host)
+        local_port: int,
+        remote_port: int,
+        command: str,                   # command to execute
+        identity_file: str | None = None,
+        ssh_path: str | None = None,
+        extra_ssh_opts: list[str] | None = None,
+        auto_restart: bool = False
+    ):
+        # Don't call super().__init__ yet, we need to set jump_host first
+        self.jump_host = jump_host
+        self.local_port = int(local_port)
+        self.remote_port = int(remote_port)
+        #self.remote_host = remote_host       
+        
+        # Now call parent constructor
+        super().__init__(
+            user_host=user_host,
+            local_port=local_port,
+            remote_host="localhost",
+            remote_port=remote_port,          
+            command=command,
+            identity_file=identity_file,
+            ssh_path=ssh_path,
+            extra_ssh_opts=extra_ssh_opts,
+            auto_restart=auto_restart
+        )
+
+    def _build_cmd(self) -> list[str]:
+        """Build SSH command with ProxyJump."""
+        cmd = [
+            self.ssh_path,
+            "-T",                     # no TTY
+            "-J", self.jump_host,     # ProxyJump through jump host
+            "-o", "StrictHostKeyChecking=no",  # auto-accept host keys
+            "-o", "UserKnownHostsFile=/dev/null",  # don't save host keys
+            "-o", "ServerAliveInterval=30",
+            "-o", "ServerAliveCountMax=3",
+            "-o", "TCPKeepAlive=yes",
+            "-L", f"{self.local_port}:localhost:{self.remote_port}",
+        ]
+
+        if self.identity_file:
+            cmd += ["-i", self.identity_file]
+
+        # Add extra options
+        cmd += self.extra_ssh_opts
+
+        cmd.append(self.user_host)
+        # Wrap command in bash -c to properly handle shell metacharacters
+        # cmd.append("bash")
+        # cmd.append("-c")
+        cmd.append(self.command)
+        return cmd
+
+############################################################################
 class SSHTunnel(braas_hpc.raas_connection.SSHProcess):
     """
     SSH tunnel management using native OpenSSH.
@@ -130,14 +317,17 @@ class SSHTunnel(braas_hpc.raas_connection.SSHProcess):
         return proc_alive and port_listening
 
     def start(self, wait_ready_timeout: float = 10.0):
+        print(f"[{self.__class__.__name__}] Starting SSH tunnel: {self.user_host} (local:{self.local_port} -> remote:{self.remote_host}:{self.remote_port})")
+        
         if self._proc and self._proc.poll() is None:
+            print(f"[{self.__class__.__name__}] Tunnel already running")
             return  # already running
 
         # if the port is already taken, raise a meaningful error
         if self._is_port_listening(self.local_host, self.local_port):
-            raise RuntimeError(
-                f"Local port {self.local_host}:{self.local_port} is already in use – choose a different one or close the existing tunnel first."
-            )
+            error_msg = f"Local port {self.local_host}:{self.local_port} is already in use – choose a different one or close the existing tunnel first."
+            print(f"[{self.__class__.__name__}] ERROR: {error_msg}")
+            raise RuntimeError(error_msg)
 
         self._start_process()
 
@@ -145,11 +335,13 @@ class SSHTunnel(braas_hpc.raas_connection.SSHProcess):
         deadline = time.time() + wait_ready_timeout
         while time.time() < deadline:
             if self._is_port_listening(self.local_host, self.local_port):
+                print(f"[{self.__class__.__name__}] Tunnel is ready and listening on {self.local_host}:{self.local_port}")
                 break
             # if ssh already failed, grab its error output
             if self._proc.poll() is not None:
                 out, err = self._proc.communicate(timeout=0.2)
                 error_msg = f"SSH tunnel failed to start:\nSTDOUT: {out}\nSTDERR: {err}"
+                print(f"[{self.__class__.__name__}] ERROR: {error_msg}")
                 if braas_hpc.raas_connection.is_verbose_debug():
                     print(error_msg)
                 raise RuntimeError(error_msg)
@@ -159,14 +351,16 @@ class SSHTunnel(braas_hpc.raas_connection.SSHProcess):
             if self._proc and self._proc.poll() is None:
                 try:
                     out, err = self._proc.communicate(timeout=0.5)
+                    print(f"[{self.__class__.__name__}] Tunnel timeout - STDOUT: {out}")
+                    print(f"[{self.__class__.__name__}] Tunnel timeout - STDERR: {err}")
                     if braas_hpc.raas_connection.is_verbose_debug():
                         print(f"SSH tunnel timeout - STDOUT: {out}\nSTDERR: {err}")
                 except:
                     pass
             self.stop()
-            raise TimeoutError(
-                f"SSH tunnel did not become ready within {wait_ready_timeout}s. Check your connection or SSH keys."
-            )
+            error_msg = f"SSH tunnel did not become ready within {wait_ready_timeout}s. Check your connection or SSH keys."
+            print(f"[{self.__class__.__name__}] ERROR: {error_msg}")
+            raise TimeoutError(error_msg)
 
         # watcher (optional auto-restart)
         self._stop_evt.clear()
@@ -251,14 +445,23 @@ class SSHTunnelAsyncSSHJump:
         self._jump_conn = None
         self._dest_conn = None
         
+        # Output capture for debugging
+        self._stdout_buffer = []
+        self._stderr_buffer = []
+        self._max_buffer_lines = 100  # Keep last 100 lines
+        
     def _parse_hosts(self):
         """Parse username and hostname from user@host strings."""
         # Parse jump host
-        if '@' in self.jump_host:
-            self.jump_user, self.jump_hostname = self.jump_host.split('@', 1)
+        if self.jump_host:
+            if '@' in self.jump_host:
+                self.jump_user, self.jump_hostname = self.jump_host.split('@', 1)
+            else:
+                self.jump_user = os.getenv('USER', 'root')
+                self.jump_hostname = self.jump_host
         else:
-            self.jump_user = os.getenv('USER', 'root')
-            self.jump_hostname = self.jump_host
+            self.jump_user = None
+            self.jump_hostname = None
             
         # Parse destination host
         if '@' in self.user_host:
@@ -266,6 +469,49 @@ class SSHTunnelAsyncSSHJump:
         else:
             self.dest_user = os.getenv('USER', 'root')
             self.dest_hostname = self.user_host
+    
+    def _log_output(self, stream_name: str, output: str):
+        """Log output with timestamp and process info."""
+        if not output:
+            return
+            
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        prefix = f"[{timestamp}] [{self.__class__.__name__}] [{stream_name}]"
+        
+        for line in output.splitlines():
+            if line.strip():
+                log_msg = f"{prefix}: {line}"
+                print(log_msg)
+                
+                # Store in buffer
+                if stream_name == "STDOUT":
+                    self._stdout_buffer.append(line)
+                    if len(self._stdout_buffer) > self._max_buffer_lines:
+                        self._stdout_buffer.pop(0)
+                else:
+                    self._stderr_buffer.append(line)
+                    if len(self._stderr_buffer) > self._max_buffer_lines:
+                        self._stderr_buffer.pop(0)
+    
+    def get_stdout(self) -> list[str]:
+        """Get captured stdout lines."""
+        return self._stdout_buffer.copy()
+    
+    def get_stderr(self) -> list[str]:
+        """Get captured stderr lines."""
+        return self._stderr_buffer.copy()
+    
+    def print_status(self):
+        """Print current status and recent output."""
+        print(f"\n=== {self.__class__.__name__} Status ===")
+        print(f"Running: {self.is_running()}")
+        print(f"\nRecent STDOUT ({len(self._stdout_buffer)} lines):")
+        for line in self._stdout_buffer[-10:]:
+            print(f"  {line}")
+        print(f"\nRecent STDERR ({len(self._stderr_buffer)} lines):")
+        for line in self._stderr_buffer[-10:]:
+            print(f"  {line}")
+        print("=" * 50)
     
     async def _forward_connection(self, reader, writer):
         """Handle a single connection forward from local to remote."""
@@ -300,6 +546,7 @@ class SSHTunnelAsyncSSHJump:
                 return_exceptions=True
             )
         except Exception as e:
+            self._log_output("STDERR", f"Port forwarding error: {e}")
             if braas_hpc.raas_connection.is_verbose_debug():
                 print(f"Port forwarding error: {e}")
         finally:
@@ -325,45 +572,74 @@ class SSHTunnelAsyncSSHJump:
                 except Exception as e:
                     raise Exception(f"Failed to load SSH key: {e}")
             
-            # Connect to jump host
-            if braas_hpc.raas_connection.is_verbose_debug():
-                print(f"Connecting to jump host: {self.jump_hostname}")
-            
-            if self.password:
-                self._jump_conn = await asyncssh.connect(
-                    self.jump_hostname,
-                    username=self.jump_user,
-                    password=self.password,
-                    known_hosts=None
-                )
+            # Handle direct connection (no jump host) vs jump host connection
+            if self.jump_hostname:
+                # Connect to jump host
+                self._log_output("STDOUT", f"Connecting to jump host: {self.jump_hostname}")
+                if braas_hpc.raas_connection.is_verbose_debug():
+                    print(f"Connecting to jump host: {self.jump_hostname}")
+                
+                if self.password:
+                    self._jump_conn = await asyncssh.connect(
+                        self.jump_hostname,
+                        username=self.jump_user,
+                        password=self.password,
+                        known_hosts=None
+                    )
+                else:
+                    self._jump_conn = await asyncssh.connect(
+                        self.jump_hostname,
+                        username=self.jump_user,
+                        client_keys=client_keys,
+                        known_hosts=None
+                    )
+                
+                self._log_output("STDOUT", f"Connected to jump host: {self.jump_hostname}")
+                
+                # Connect to destination through jump host
+                self._log_output("STDOUT", f"Creating tunnel to destination: {self.dest_hostname}")
+                if braas_hpc.raas_connection.is_verbose_debug():
+                    print(f"Creating tunnel to destination: {self.dest_hostname}")
+                
+                if self.password:
+                    self._dest_conn = await self._jump_conn.connect_ssh(
+                        self.dest_hostname,
+                        username=self.dest_user,
+                        password=self.password,
+                        known_hosts=None
+                    )
+                else:
+                    self._dest_conn = await self._jump_conn.connect_ssh(
+                        self.dest_hostname,
+                        username=self.dest_user,
+                        client_keys=client_keys,
+                        known_hosts=None
+                    )
+                self._log_output("STDOUT", f"Connected to destination: {self.dest_hostname}")
             else:
-                self._jump_conn = await asyncssh.connect(
-                    self.jump_hostname,
-                    username=self.jump_user,
-                    client_keys=client_keys,
-                    known_hosts=None
-                )
-            
-            # Connect to destination through jump host
-            if braas_hpc.raas_connection.is_verbose_debug():
-                print(f"Creating tunnel to destination: {self.dest_hostname}")
-            
-            if self.password:
-                self._dest_conn = await self._jump_conn.connect_ssh(
-                    self.dest_hostname,
-                    username=self.dest_user,
-                    password=self.password,
-                    known_hosts=None
-                )
-            else:
-                self._dest_conn = await self._jump_conn.connect_ssh(
-                    self.dest_hostname,
-                    username=self.dest_user,
-                    client_keys=client_keys,
-                    known_hosts=None
-                )
+                # Direct connection without jump host
+                self._log_output("STDOUT", f"Connecting directly to: {self.dest_hostname}")
+                if braas_hpc.raas_connection.is_verbose_debug():
+                    print(f"Connecting directly to: {self.dest_hostname}")
+                
+                if self.password:
+                    self._dest_conn = await asyncssh.connect(
+                        self.dest_hostname,
+                        username=self.dest_user,
+                        password=self.password,
+                        known_hosts=None
+                    )
+                else:
+                    self._dest_conn = await asyncssh.connect(
+                        self.dest_hostname,
+                        username=self.dest_user,
+                        client_keys=client_keys,
+                        known_hosts=None
+                    )
+                self._log_output("STDOUT", f"Connected directly to: {self.dest_hostname}")
             
             # Set up local port forwarding
+            self._log_output("STDOUT", f"Setting up port forward: localhost:{self.local_port} -> localhost:{self.remote_port}")
             if braas_hpc.raas_connection.is_verbose_debug():
                 print(f"Setting up port forward: localhost:{self.local_port} -> localhost:{self.remote_port}")
             
@@ -375,6 +651,7 @@ class SSHTunnelAsyncSSHJump:
             )
             
             self._running = True
+            self._log_output("STDOUT", f"Port forwarding active on localhost:{self.local_port}")
             
             # Keep server running until stop event
             async with server:
@@ -382,6 +659,7 @@ class SSHTunnelAsyncSSHJump:
                     await asyncio.sleep(1)
         
         except Exception as e:
+            self._log_output("STDERR", f"SSH tunnel error: {e}")
             if braas_hpc.raas_connection.is_verbose_debug():
                 print(f"SSH tunnel error: {e}")
             self._running = False
@@ -390,6 +668,7 @@ class SSHTunnelAsyncSSHJump:
                 await asyncio.sleep(5)
                 await self._run_tunnel_async()
         finally:
+            self._log_output("STDOUT", "Port forwarding stopped")
             await self._cleanup_connections()
     
     async def _cleanup_connections(self):
@@ -421,7 +700,11 @@ class SSHTunnelAsyncSSHJump:
     
     def start(self):
         """Start the SSH tunnel in a background thread."""
+        print(f"[{self.__class__.__name__}] Starting AsyncSSH tunnel: {self.jump_host} -> {self.user_host}")
+        print(f"[{self.__class__.__name__}] Port forwarding: localhost:{self.local_port} -> localhost:{self.remote_port}")
+        
         if self._thread and self._thread.is_alive():
+            print(f"[{self.__class__.__name__}] SSH tunnel already running")
             if braas_hpc.raas_connection.is_verbose_debug():
                 print("SSH tunnel already running")
             return
@@ -432,9 +715,12 @@ class SSHTunnelAsyncSSHJump:
         
         # Give it a moment to establish connection
         time.sleep(1)
+        print(f"[{self.__class__.__name__}] AsyncSSH tunnel started (background thread)")
     
     def stop(self):
         """Stop the SSH tunnel."""
+        print(f"[{self.__class__.__name__}] Stopping AsyncSSH tunnel")
+        
         if braas_hpc.raas_connection.is_verbose_debug():
             print("Stopping SSH tunnel")
         
@@ -528,14 +814,23 @@ class SSHTunnelParamikoJump:
         self._dest_client = None
         self._transport = None
         
+        # Output capture for debugging
+        self._stdout_buffer = []
+        self._stderr_buffer = []
+        self._max_buffer_lines = 100  # Keep last 100 lines
+        
     def _parse_hosts(self):
         """Parse username and hostname from user@host strings."""
         # Parse jump host
-        if '@' in self.jump_host:
-            self.jump_user, self.jump_hostname = self.jump_host.split('@', 1)
+        if self.jump_host:
+            if '@' in self.jump_host:
+                self.jump_user, self.jump_hostname = self.jump_host.split('@', 1)
+            else:
+                self.jump_user = os.getenv('USER', 'root')
+                self.jump_hostname = self.jump_host
         else:
-            self.jump_user = os.getenv('USER', 'root')
-            self.jump_hostname = self.jump_host
+            self.jump_user = None
+            self.jump_hostname = None
             
         # Parse destination host
         if '@' in self.user_host:
@@ -543,6 +838,49 @@ class SSHTunnelParamikoJump:
         else:
             self.dest_user = os.getenv('USER', 'root')
             self.dest_hostname = self.user_host
+    
+    def _log_output(self, stream_name: str, output: str):
+        """Log output with timestamp and process info."""
+        if not output:
+            return
+            
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        prefix = f"[{timestamp}] [{self.__class__.__name__}] [{stream_name}]"
+        
+        for line in output.splitlines():
+            if line.strip():
+                log_msg = f"{prefix}: {line}"
+                print(log_msg)
+                
+                # Store in buffer
+                if stream_name == "STDOUT":
+                    self._stdout_buffer.append(line)
+                    if len(self._stdout_buffer) > self._max_buffer_lines:
+                        self._stdout_buffer.pop(0)
+                else:
+                    self._stderr_buffer.append(line)
+                    if len(self._stderr_buffer) > self._max_buffer_lines:
+                        self._stderr_buffer.pop(0)
+    
+    def get_stdout(self) -> list[str]:
+        """Get captured stdout lines."""
+        return self._stdout_buffer.copy()
+    
+    def get_stderr(self) -> list[str]:
+        """Get captured stderr lines."""
+        return self._stderr_buffer.copy()
+    
+    def print_status(self):
+        """Print current status and recent output."""
+        print(f"\n=== {self.__class__.__name__} Status ===")
+        print(f"Running: {self.is_running()}")
+        print(f"\nRecent STDOUT ({len(self._stdout_buffer)} lines):")
+        for line in self._stdout_buffer[-10:]:
+            print(f"  {line}")
+        print(f"\nRecent STDERR ({len(self._stderr_buffer)} lines):")
+        for line in self._stderr_buffer[-10:]:
+            print(f"  {line}")
+        print("=" * 50)
     
     def _load_key(self):
         """Load SSH key from file."""
@@ -633,36 +971,55 @@ class SSHTunnelParamikoJump:
         import paramiko
         
         try:
-            # Connect to jump host
-            if braas_hpc.raas_connection.is_verbose_debug():
-                print(f"Connecting to jump host: {self.jump_hostname}")
-            
-            self._jump_client = self._create_ssh_client(self.jump_hostname, self.jump_user)
-            
-            # Create tunnel through jump host to destination
-            if braas_hpc.raas_connection.is_verbose_debug():
-                print(f"Creating tunnel to destination: {self.dest_hostname}")
-            
-            jump_transport = self._jump_client.get_transport()
-            dest_addr = (self.dest_hostname, 22)
-            local_addr = ('localhost', 0)
-            jump_channel = jump_transport.open_channel('direct-tcpip', dest_addr, local_addr)
-            
-            # Connect to destination through the jump host channel
-            self._dest_client = paramiko.SSHClient()
-            self._dest_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            
-            connect_kwargs = {
-                'username': self.dest_user,
-                'look_for_keys': False,
-                'allow_agent': False,
-                'sock': jump_channel
-            }
-            
-            if self.password:
-                connect_kwargs['password'] = self.password
+            # Handle direct connection (no jump host) vs jump host connection
+            if self.jump_hostname:
+                # Connect to jump host
+                self._log_output("STDOUT", f"Connecting to jump host: {self.jump_hostname}")
+                if braas_hpc.raas_connection.is_verbose_debug():
+                    print(f"Connecting to jump host: {self.jump_hostname}")
+                
+                self._jump_client = self._create_ssh_client(self.jump_hostname, self.jump_user)
+                self._log_output("STDOUT", f"Connected to jump host: {self.jump_hostname}")
+                
+                # Create tunnel through jump host to destination
+                self._log_output("STDOUT", f"Creating tunnel to destination: {self.dest_hostname}")
+                if braas_hpc.raas_connection.is_verbose_debug():
+                    print(f"Creating tunnel to destination: {self.dest_hostname}")
+                
+                jump_transport = self._jump_client.get_transport()
+                dest_addr = (self.dest_hostname, 22)
+                local_addr = ('localhost', 0)
+                jump_channel = jump_transport.open_channel('direct-tcpip', dest_addr, local_addr)
+                
+                # Connect to destination through the jump host channel
+                self._dest_client = paramiko.SSHClient()
+                self._dest_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                
+                connect_kwargs = {
+                    'username': self.dest_user,
+                    'look_for_keys': False,
+                    'allow_agent': False,
+                    'sock': jump_channel
+                }
+                
+                if self.password:
+                    connect_kwargs['password'] = self.password
+                else:
+                    key = self._load_key()
+                    if key:
+                        connect_kwargs['pkey'] = key
+                
+                self._dest_client.connect(self.dest_hostname, **connect_kwargs)
+                self._dest_client.get_transport().set_keepalive(30)
+                self._log_output("STDOUT", f"Connected to destination: {self.dest_hostname}")
             else:
-                key = self._load_key()
+                # Direct connection without jump host
+                self._log_output("STDOUT", f"Connecting directly to: {self.dest_hostname}")
+                if braas_hpc.raas_connection.is_verbose_debug():
+                    print(f"Connecting directly to: {self.dest_hostname}")
+                
+                self._dest_client = self._create_ssh_client(self.dest_hostname, self.dest_user)
+                self._log_output("STDOUT", f"Connected directly to: {self.dest_hostname}")
                 if key:
                     connect_kwargs['pkey'] = key
             
@@ -670,6 +1027,7 @@ class SSHTunnelParamikoJump:
             self._dest_client.get_transport().set_keepalive(30)
             
             # Set up local port forwarding
+            self._log_output("STDOUT", f"Setting up port forward: localhost:{self.local_port} -> localhost:{self.remote_port}")
             if braas_hpc.raas_connection.is_verbose_debug():
                 print(f"Setting up port forward: localhost:{self.local_port} -> localhost:{self.remote_port}")
             
@@ -682,11 +1040,13 @@ class SSHTunnelParamikoJump:
             server_socket.settimeout(1.0)  # Allow checking stop event
             
             self._running = True
+            self._log_output("STDOUT", f"Port forwarding active on localhost:{self.local_port}")
             
             # Accept connections and forward them
             while not self._stop_event.is_set():
                 try:
                     client_socket, addr = server_socket.accept()
+                    self._log_output("STDOUT", f"Accepted connection from {addr}")
                     if braas_hpc.raas_connection.is_verbose_debug():
                         print(f"Accepted connection from {addr}")
                     
@@ -723,12 +1083,15 @@ class SSHTunnelParamikoJump:
                 except socket.timeout:
                     continue
                 except Exception as e:
+                    self._log_output("STDERR", f"Connection accept error: {e}")
                     if not self._stop_event.is_set() and braas_hpc.raas_connection.is_verbose_debug():
                         print(f"Connection accept error: {e}")
             
             server_socket.close()
+            self._log_output("STDOUT", "Port forwarding stopped")
             
         except Exception as e:
+            self._log_output("STDERR", f"SSH tunnel error: {e}")
             if braas_hpc.raas_connection.is_verbose_debug():
                 print(f"SSH tunnel error: {e}")
             self._running = False
@@ -757,7 +1120,11 @@ class SSHTunnelParamikoJump:
     
     def start(self):
         """Start the SSH tunnel in a background thread."""
+        print(f"[{self.__class__.__name__}] Starting Paramiko tunnel: {self.jump_host} -> {self.user_host}")
+        print(f"[{self.__class__.__name__}] Port forwarding: localhost:{self.local_port} -> localhost:{self.remote_port}")
+        
         if self._thread and self._thread.is_alive():
+            print(f"[{self.__class__.__name__}] SSH tunnel already running")
             if braas_hpc.raas_connection.is_verbose_debug():
                 print("SSH tunnel already running")
             return
@@ -768,10 +1135,14 @@ class SSHTunnelParamikoJump:
         
         # Give it a moment to establish connection
         time.sleep(1)
+        print(f"[{self.__class__.__name__}] Paramiko tunnel started (background thread)")
     
     def stop(self):
         """Stop the SSH tunnel."""
+        print(f"[{self.__class__.__name__}] Stopping Paramiko tunnel")
+        
         if braas_hpc.raas_connection.is_verbose_debug():
+            print("Stopping SSH tunnel")
             print("Stopping SSH tunnel")
         
         self._stop_event.set()
@@ -793,32 +1164,170 @@ class RaasInteractiveSession:
         self.ssh_tunnel_proc = None
         self.ssh_tunnel_paramiko_jump = None
         self.ssh_tunnel_asyncssh_jump = None
+        self.ssh_command_proc = None
+        self.ssh_command_jump_proc = None
 
-    def create_ssh_tunnel(self, key_file, destination, node, port1, port2):
-        """create_ssh_tunnel"""
+    def create_ssh_command(self, key_file, key_password, password, destination, node, local_port, remote_port, command, ssh_library='SYSTEM', auto_restart=False):
+        """create_ssh_command - Start a long-running SSH command process with tunnel
+        
+        Creates an SSH tunnel with port forwarding and executes a command on the remote host.
+        The implementation used depends on ssh_library parameter.
+        
+        Args:
+            key_file: Path to SSH private key file
+            key_password: Password for encrypted key file (optional)
+            password: Password for password-based auth (optional)
+            destination: Destination host (format: user@host)
+            node: Remote host for port forwarding (usually 'localhost')
+            local_port: Local port for tunnel
+            remote_port: Remote port to forward to
+            command: Command to execute on remote host
+            ssh_library: 'SYSTEM' (OpenSSH), 'PARAMIKO', or 'ASYNCSSH'
+            auto_restart: Whether to automatically restart on connection failure
+        """
+        print(f"[RaasInteractiveSession] Creating SSH command+tunnel to {destination} using {ssh_library}")
+        print(f"[RaasInteractiveSession] Port forwarding: localhost:{local_port} -> {node}:{remote_port}")
+        print(f"[RaasInteractiveSession] Command: {command}")
 
-        if not self.ssh_tunnel_proc is None:
-            self.ssh_tunnel_proc.stop()
-            self.ssh_tunnel_proc = None
+        if not self.ssh_command_proc is None:
+            print(f"[RaasInteractiveSession] Stopping existing SSH command process")
+            self.ssh_command_proc.stop()
+            self.ssh_command_proc = None
 
-        self.ssh_tunnel_proc = SSHTunnel(
-            user_host=destination,
-            local_port=port1,
-            remote_host=node,
-            remote_port=port2,
-            identity_file=key_file,
-            auto_restart=True
-        )
+        if ssh_library == 'SYSTEM':
+            # Use native OpenSSH implementation
+            self.ssh_command_proc = SSHCommand(
+                user_host=destination,
+                local_port=local_port,
+                remote_host=node,
+                remote_port=remote_port,
+                command=command,
+                identity_file=key_file,
+                auto_restart=auto_restart
+            )
+        elif ssh_library == 'PARAMIKO':
+            # For Paramiko, we need to use the tunnel implementation
+            # that combines tunnel + command execution
+            print(f"[RaasInteractiveSession] Note: Paramiko implementation creates tunnel only, command execution separate")
+            self.ssh_command_proc = SSHTunnelParamikoJump(
+                user_host=destination,
+                jump_host=None,  # No jump host for direct connection
+                local_port=local_port,
+                remote_port=remote_port,
+                identity_file=key_file,
+                key_password=key_password,
+                password=password,
+                auto_restart=auto_restart
+            )
+        elif ssh_library == 'ASYNCSSH':
+            # For AsyncSSH, we need to use the tunnel implementation
+            print(f"[RaasInteractiveSession] Note: AsyncSSH implementation creates tunnel only, command execution separate")
+            self.ssh_command_proc = SSHTunnelAsyncSSHJump(
+                user_host=destination,
+                jump_host=None,  # No jump host for direct connection
+                local_port=local_port,
+                remote_port=remote_port,
+                identity_file=key_file,
+                key_password=key_password,
+                password=password,
+                auto_restart=auto_restart
+            )
+        else:
+            raise ValueError(f"Unknown SSH library: {ssh_library}")
 
-        self.ssh_tunnel_proc.start()
+        # Start the command process (it will keep running in background)
+        self.ssh_command_proc.start()
+        print(f"[RaasInteractiveSession] SSH command+tunnel started successfully")
+
+    def close_ssh_command(self):
+        """close_ssh_command - Stop/kill the running SSH command process"""
+
+        if not self.ssh_command_proc is None:
+            print(f"[RaasInteractiveSession] Stopping SSH command process")
+            self.ssh_command_proc.stop()
+            self.ssh_command_proc = None
+
+    def create_ssh_command_jump(self, key_file, key_password, password, jump_host, destination, node, local_port, remote_port, command, ssh_library='SYSTEM', auto_restart=False):
+        """create_ssh_command_jump - Start a long-running SSH command process through a jump host with tunnel
+        
+        Creates an SSH tunnel with port forwarding through a jump host and executes a command.
+        The implementation used depends on ssh_library parameter.
+        
+        Args:
+            key_file: Path to SSH private key file
+            key_password: Password for encrypted key file (optional)
+            password: Password for password-based auth (optional)
+            jump_host: Jump/bastion host (format: user@host)
+            destination: Final destination host (format: user@host)
+            node: Remote host for port forwarding (usually 'localhost')
+            local_port: Local port for tunnel
+            remote_port: Remote port to forward to
+            command: Command to execute on remote host
+            ssh_library: 'SYSTEM' (OpenSSH), 'PARAMIKO', or 'ASYNCSSH'
+            auto_restart: Whether to automatically restart on connection failure
+        """
+        print(f"[RaasInteractiveSession] Creating SSH command+tunnel with jump: {jump_host} -> {destination} using {ssh_library}")
+        print(f"[RaasInteractiveSession] Port forwarding: localhost:{local_port} -> {node}:{remote_port}")
+        print(f"[RaasInteractiveSession] Command: {command}")
+
+        if not self.ssh_command_jump_proc is None:
+            print(f"[RaasInteractiveSession] Stopping existing SSH command jump process")
+            self.ssh_command_jump_proc.stop()
+            self.ssh_command_jump_proc = None
+
+        if ssh_library == 'SYSTEM':
+            # Use native OpenSSH implementation with ProxyJump
+            self.ssh_command_jump_proc = SSHCommandJump(
+                user_host=destination,
+                jump_host=jump_host,
+                local_port=local_port,
+                remote_port=remote_port,
+                command=command,
+                identity_file=key_file,
+                auto_restart=auto_restart
+            )
+        elif ssh_library == 'PARAMIKO':
+            # Use Paramiko tunnel implementation with jump host
+            self.ssh_command_jump_proc = SSHTunnelParamikoJump(
+                user_host=destination,
+                jump_host=jump_host,
+                local_port=local_port,
+                remote_port=remote_port,
+                identity_file=key_file,
+                key_password=key_password,
+                password=password,
+                auto_restart=auto_restart
+            )
+        elif ssh_library == 'ASYNCSSH':
+            # Use AsyncSSH tunnel implementation with jump host
+            self.ssh_command_jump_proc = SSHTunnelAsyncSSHJump(
+                user_host=destination,
+                jump_host=jump_host,
+                local_port=local_port,
+                remote_port=remote_port,
+                identity_file=key_file,
+                key_password=key_password,
+                password=password,
+                auto_restart=auto_restart
+            )
+        else:
+            raise ValueError(f"Unknown SSH library: {ssh_library}")
+
+        # Start the command process (it will keep running in background)
+        self.ssh_command_jump_proc.start()
+        print(f"[RaasInteractiveSession] SSH command+tunnel jump started successfully")
+
+    def close_ssh_command_jump(self):
+        """close_ssh_command_jump - Stop/kill the running SSH command process with jump host"""
+
+        if not self.ssh_command_jump_proc is None:
+            print(f"[RaasInteractiveSession] Stopping SSH command jump process")
+            self.ssh_command_jump_proc.stop()
+            self.ssh_command_jump_proc = None
 
     def close_ssh_tunnel(self):
-        """close_ssh_tunnel"""
-
-        if not self.ssh_tunnel_proc is None:
-            self.ssh_tunnel_proc.stop()
-            self.ssh_tunnel_proc = None
-
+        """close_ssh_tunnel - Alias for close_ssh_command for backward compatibility"""
+        self.close_ssh_command()
 
     def create_ssh_tunnel_paramiko_jump(self, key_file, key_password, password, jump_host, destination, local_port, remote_port, auto_restart=False):
         """create_ssh_tunnel_paramiko_jump - Create SSH tunnel through jump host using Paramiko
